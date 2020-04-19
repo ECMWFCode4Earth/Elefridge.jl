@@ -30,6 +30,9 @@ Further flexibility regarding the distribution of the data can be achieved with 
 
 Data compression can be applied not just on a number-by-number basis, as discussed, but also on a set of numbers. This comes with the advantage that interdependencies of number occurrences can be exploited, especially important due to the typical power-law spectral variance distribution in geophysical data. While this is an attractive approach to climate data compression (4,5), it interlinks the compressed data in a way which may slow down the decompression of subsets, as individual numbers cannot be decompressed independently.
 
+![Decimal precision](figs/decimal_precision.png?raw=true "Decimal Precision")  
+**Fig. 1** *Decimal precision for various 16 and 8-bit number formats. Q6.10 is the fixed-point number format with 10 fraction bits. LogFixPoint16 and Approx14 are both logarithmic fixed-point formats.*
+
 ### Assessment of precision: Error norms
 
 Errors of lossy compressions can be measured in many ways. A natural way to think about errors on a linear-scale is the L2-error, which quantifies the distance in an Euclidean space of a compressed array to its reference. However, using floating-point numbers this distance changes not just with the number of bits used but also with values itself. Quantifying the L1-log error, which is identical to the decimal (or binary) error, returning the number of correct decimal places (or significant bits), is another way to measure a scale-invariant error. Reducing the number of bits in a floating-point encoded number creates an error that is approximately proportional to the L1-log error, such that an investigation of various error norms to assess the precision retained is proposed.
