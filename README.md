@@ -62,13 +62,25 @@ To find the optimal compression method in the size-precision-speed space for CAM
 
 The last month of the project will focus on the documentation to make the resulting compression methods easily accessible. This includes the publication in open-source packages that come with tests and benchmark for reproducibility.
 
+The following timeline is suggested for the project covering the months May to August.
+
+|               | May           | June  | July  | August|
+| ------------- |:-------------:|:-----:|:-----:|:-----:|
+| Information entropy for CAMS data with floats, fixed-points, logarithmic fixed-points, and posits      | O | O |   |   |
+| Development of a posit-based quantization             | O | O | O |   |
+| Development of sonums for CAMS data                   |   | O | O |   |
+| Validation with different error norms                 |   | O | O |   |
+| Benchmarks for read and write performance             |   |   | O | O |
+| Documentation and tests for repository                |   |   |   | O |
+
+
 ### References
 
-1.    Silver, J. D. & Zender, C. S. The compression–error trade-off for large gridded data sets. Geosci. Model Dev. 10, 413–423 (2017).
-2.    Jeffress, S., Düben, P. & Palmer, T. Bitwise efficiency in chaotic models. Proc. R. Soc. Math. Phys. Eng. Sci. 473, 20170144 (2017).
-3.    Zender, C. S. Bit Grooming: statistically accurate precision-preserving quantization with compression, evaluated in the netCDF Operators (NCO, v4.4.8+). Geosci. Model Dev. 9, 3199–3211 (2016).
-4.    Düben, P. D., Leutbecher, M. & Bauer, P. New Methods for Data Storage of Model Output from Ensemble Simulations. Mon. Weather Rev. 147, 677–689 (2018).
-5.    Düben, P. D. A New Number Format for Ensemble Simulations. J. Adv. Model. Earth Syst. 10, 2983–2991 (2018).
-6.    Gustafson, J. L. & Yonemoto, I. Beating Floating Point at its Own Game: Posit Arithmetic. Supercomput. Front. Innov. 4, 16 (2017).
-7.    Klöwer, M., Düben, P. D. & Palmer, T. N. Posits as an alternative to floats for weather and climate models. in Proceedings of the Conference for Next Generation Arithmetic 2019 on   - CoNGA’19 1–8 (ACM Press, 2019). doi:10.1145/3316279.3316281.
-8.    Klöwer, M. Sonums - a maximum entropy number format. (Zenodo, 2019). doi:10.5281/zenodo.3531887.
+1.    [Silver, J. D. & Zender, C. S. The compression–error trade-off for large gridded data sets. Geosci. Model Dev. 10, 413–423 (2017).](http://dust.ess.uci.edu/ppr/ppr_SiZ17.pdf)
+2.    [Jeffress, S., Düben, P. & Palmer, T. Bitwise efficiency in chaotic models. Proc. R. Soc. Math. Phys. Eng. Sci. 473, 20170144 (2017).](https://royalsocietypublishing.org/doi/10.1098/rspa.2017.0144)
+3.    [Zender, C. S. Bit Grooming: statistically accurate precision-preserving quantization with compression, evaluated in the netCDF Operators (NCO, v4.4.8+). Geosci. Model Dev. 9, 3199–3211 (2016).](https://www.geosci-model-dev.net/9/3199/2016/)
+4.    [Düben, P. D., Leutbecher, M. & Bauer, P. New Methods for Data Storage of Model Output from Ensemble Simulations. Mon. Weather Rev. 147, 677–689 (2018).](https://journals.ametsoc.org/doi/full/10.1175/MWR-D-18-0170.1)
+5.    [Düben, P. D. A New Number Format for Ensemble Simulations. J. Adv. Model. Earth Syst. 10, 2983–2991 (2018).](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2018MS001420)
+6.    [Gustafson, J. L. & Yonemoto, I. Beating Floating Point at its Own Game: Posit Arithmetic. Supercomput. Front. Innov. 4, 16 (2017).](http://www.johngustafson.net/pdfs/BeatingFloatingPoint.pdf)
+7.    [Klöwer, M., Düben, P. D. & Palmer, T. N. Posits as an alternative to floats for weather and climate models. in Proceedings of the Conference for Next Generation Arithmetic 2019 on   - CoNGA’19 1–8 (ACM Press, 2019). doi:10.1145/3316279.3316281.](https://dl.acm.org/doi/abs/10.1145/3316279.3316281)
+8.    [Klöwer, M. Sonums - a maximum entropy number format. (Zenodo, 2019). doi:10.5281/zenodo.3531887.](https://github.com/milankl/Sonums.jl)
