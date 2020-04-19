@@ -28,7 +28,7 @@ Posits are a recently proposed alternative to floating-point numbers (6), which 
 
 Further flexibility regarding the distribution of the data can be achieved with entropy encoding. A recently developed number format are self-organizing numbers, so called Sonums (8), which can be set-up to maximize the entropy or, often closely related, minimize the decimal rounding error (minimizing the L1 or L2-error is another possibility). Sonums require an alphabet to be stored with the data, which is, however, for large data sets a negligible overhead. The sonum conversion is asymmetric in speed and complexity. While the creation of an alphabet can be a time consuming operation, the back conversion is simple array access.
 
-Data compression can be applied not just on a number-by-number basis, as discussed, but also on a set of numbers. This comes with the advantage that interdependencies of number occurrences can be exploited, especially important due to the typical power-law spectral variance distribution in geophysical data. While this is an attractive approach to climate data compression4,5, it interlinks the compressed data in a way which may slow down the decompression of subsets, as individual numbers cannot be decompressed independently.
+Data compression can be applied not just on a number-by-number basis, as discussed, but also on a set of numbers. This comes with the advantage that interdependencies of number occurrences can be exploited, especially important due to the typical power-law spectral variance distribution in geophysical data. While this is an attractive approach to climate data compression (4,5), it interlinks the compressed data in a way which may slow down the decompression of subsets, as individual numbers cannot be decompressed independently.
 
 ### Assessment of precision: Error norms
 
@@ -66,13 +66,16 @@ The following timeline is suggested for the project covering the months May to A
 
 |               | May           | June  | July  | August|
 | ------------- |:-------------:|:-----:|:-----:|:-----:|
-| Information entropy for CAMS data with floats, fixed-points, logarithmic fixed-points, and posits      | O | O |   |   |
+| Information entropy for CAMS data with different number formats      | O | O |   |   |
 | Development of a posit-based quantization             | O | O | O |   |
 | Development of sonums for CAMS data                   |   | O | O |   |
 | Validation with different error norms                 |   | O | O |   |
 | Benchmarks for read and write performance             |   |   | O | O |
 | Documentation and tests for repository                |   |   |   | O |
 
+### Dissemination of project outcomes
+
+Work in progress as well as the project outcomes will be shared via an open-source github repository, currently distributed under the MIT license. Preliminary project name is Elefridge. The repository will be integrated into the Julia language framework for continuous integration, package registration and documentation. Although Python is the dominating language for climate data analysis, we will use Julia due to its better suited paradigms around type-flexibility, first-class custom data types and interoperability with other languages. A final implementation of the best suited data compression method can then be translated into existing climate data frameworks (GRIB, netCDF) to remove the Julia dependency.
 
 ### References
 
