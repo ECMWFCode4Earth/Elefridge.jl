@@ -35,7 +35,7 @@ Data compression can be applied not just on a number-by-number basis, as discuss
 
 ### Assessment of precision: Error norms
 
-Errors of lossy compressions can be measured in many ways. A natural way to think about errors on a linear-scale is the L2-error, which quantifies the distance in an Euclidean space of a compressed array to its reference. However, using floating-point numbers this distance changes not just with the number of bits used but also with values itself. Quantifying the L1-log error, which is identical to the decimal (or binary) error, returning the number of correct decimal places (or significant bits), is another way to measure a scale-invariant error. Reducing the number of bits in a floating-point encoded number creates an error that is approximately proportional to the L1-log error, such that an investigation of various error norms to assess the precision retained is proposed.
+Errors of lossy compressions can be measured in many ways. A natural way to think about errors on a linear-scale is the L2-error, which quantifies the distance in an Euclidean space of a compressed array to its reference. However, using floating-point numbers this distance changes not just with the number of bits used but also with values itself. Quantifying the L1-log error, which is identical to the decimal (or binary) error, returning the number of correct decimal places (or significant bits), is another way to measure a scale-invariant error. Reducing the number of bits in a floating-point encoded number creates an error that is approximately proportional to the L1-log error. An investigation of various error norms to assess the precision retained is therefore proposed.
 
 ### Timeline of key developments
 
