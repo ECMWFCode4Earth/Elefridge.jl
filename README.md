@@ -1,4 +1,7 @@
 [![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
+[![Build Status](https://travis-ci.com/milankl/Elefridge.jl.svg?branch=master)](https://travis-ci.com/milankl/Elefridge.jl.svg)
+[![AppVeyor](https://img.shields.io/appveyor/ci/milankl/Sherlogs-jl?label=Windows&logo=appveyor&logoColor=white)](https://ci.appveyor.com/project/milankl/Sherlogs-jl)
+
 
 # Elefridge.jl
 ***How to put an elephant into a fridge?***  
@@ -6,7 +9,7 @@
 ***Precision**: You may store a picture, but then you don’t know how it looks from behind.*  
 ***Speed**: You may store its DNA, but then it takes years to recreate an elephant.*  
 
-This is a work-in-progress repository on fast and precise but lossy data compression for climate data. 
+This is a work-in-progress repository on fast and precise but lossy data compression for climate data.
 This repository is inteded for the work on [ECMWF](https://www.ecmwf.int)'s [summer of weather code](https://esowc.ecmwf.int) [challege #14: Size, precision, speed - pick two](https://github.com/esowc/challenges_2020/issues/4).
 
 # Proposal
@@ -41,7 +44,7 @@ The first two months will be spent to understand the data distributions of the v
 
 #### 2. A posit-based quantization method
 
-Presumably, one bottleneck of the current GRIB compression is the fixed-point number quantization, which encodes non-uniformly distributed with low entropy. A possible improvement would be to replace the fixed-point numbers with posits. 
+Presumably, one bottleneck of the current GRIB compression is the fixed-point number quantization, which encodes non-uniformly distributed with low entropy. A possible improvement would be to replace the fixed-point numbers with posits.
 
 #### 3. Sonums for CAMS data
 
@@ -57,7 +60,7 @@ To find the optimal compression method in the size-precision-speed space for CAM
 
 #### 6. Documentation and tests
 
-The last month of the project will focus on the documentation to make the resulting compression methods easily accessible. This includes the publication in open-source packages that come with tests and benchmark for reproducibility. 
+The last month of the project will focus on the documentation to make the resulting compression methods easily accessible. This includes the publication in open-source packages that come with tests and benchmark for reproducibility.
 
 ### References
 
@@ -69,4 +72,3 @@ The last month of the project will focus on the documentation to make the result
 6.    Gustafson, J. L. & Yonemoto, I. Beating Floating Point at its Own Game: Posit Arithmetic. Supercomput. Front. Innov. 4, 16 (2017).
 7.    Klöwer, M., Düben, P. D. & Palmer, T. N. Posits as an alternative to floats for weather and climate models. in Proceedings of the Conference for Next Generation Arithmetic 2019 on   - CoNGA’19 1–8 (ACM Press, 2019). doi:10.1145/3316279.3316281.
 8.    Klöwer, M. Sonums - a maximum entropy number format. (Zenodo, 2019). doi:10.5281/zenodo.3531887.
-
