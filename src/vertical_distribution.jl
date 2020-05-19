@@ -23,9 +23,9 @@ no2p10 = [percentile(vec(no2[:,:,i]),10) for i in level]
 no2p90 = [percentile(vec(no2[:,:,i]),90) for i in level]
 
 ## EOF in the vertical
-no2f = log10.(Matrix(reshape(no2,(:,length(level)))'))
-M = fit(PCA,no2f,maxoutdim=20,pratio=0.999)
-no2fhat = transform(M,no2f)
+no2f = Matrix(reshape(no2,(:,length(level)))')
+M = fit(PCA,log10.(no2f),maxoutdim=20,pratio=0.999)
+no2fhat = transform(M,log10.(no2f))
 no2fr = 10f0 .^reconstruct(M,no2fhat)
 
 ## reconstruction statistics
@@ -46,27 +46,20 @@ demax = maximum(decimal_error,dims=2)[:,1]
 dep10 = [percentile(decimal_error[i,:],10) for i in level]
 dep90 = [percentile(decimal_error[i,:],90) for i in level]
 
-## by number of modes
-M = fit(PCA,no2f,maxoutdim=80,pratio=0.999999)
-no2fhat = transform(M,no2f)
+## highest loadings
 P = projection(M)
-n = 71
-gm = Array{Float32,2}(undef,n,6)
-
-# for i in 1:size(no2f)[2]
-    # no2f[:,i] -= mean(M)
-# end
-
-for i in 1:n
-    println(i)
-    no2fr = P[:,1:9+i]*no2fhat[1:9+i,:]
-    decimal_error = abs.(no2f-no2fr)
-    gm[i,1] = mean(decimal_error)
-    gm[i,2] = median(decimal_error)
-    gm[i,3] = minimum(decimal_error)
-    gm[i,4] = maximum(decimal_error)
-    gm[i,5] = percentile(vec(decimal_error),10)
-    gm[i,6] = percentile(vec(decimal_error),90)
+Ps = zeros(Int64,size(P))
+for i in 1:size(Ps)[2]
+    Ps[:,i] = sortperm(abs.(P[:,i]))
+end
+L = zeros(Int64,size(P)[2])
+L[1] = Ps[end,1]
+for i in 2:length(L)
+    j = 0
+    while Ps[end-j,i] in L
+        j += 1
+    end
+    L[i] = Ps[end-j,i]
 end
 
 ##
@@ -83,10 +76,32 @@ ax2.plot(no2rmi,level,"C0",lw=1.5,label="median")
 ax2.fill_betweenx(level,no2rmin,no2rmax,color="C0",alpha=0.2,label="Min-max range")
 ax2.fill_betweenx(level,no2rp10,no2rp90,color="C0",alpha=0.5,label="10-90% range")
 
+for i in level
+    xvals = no2f[i,(decimal_error[i,:] .>= 0.5f0) .* (decimal_error[i,:] .< 1f0)]
+    ax.scatter(xvals,i*ones(length(xvals)),10,"yellow",alpha=0.05)
+
+    xvals = no2f[i,(decimal_error[i,:] .>= 1f0) .* (decimal_error[i,:] .< 2f0)]
+    ax.scatter(xvals,i*ones(length(xvals)),10,"C1",alpha=0.1)
+
+    xvals = no2f[i,(decimal_error[i,:] .>= 2f0)]
+    ax.scatter(xvals,i*ones(length(xvals)),10,"C3",alpha=0.1)
+end
+
+ax.scatter([1,2,3],[0,0,0],10,"yellow",alpha=0.5,label="error > 0.5")
+ax.scatter([1,2,3],[0,0,0],10,"C1",alpha=0.5,label="error > 1")
+ax.scatter([1,2,3],[0,0,0],10,"C3",alpha=0.5,label="error > 2")
+
 ax3.semilogx(dem,level,"C0",lw=3,label="mean")
 ax3.plot(demi,level,"C0",lw=1.5,label="median")
 ax3.fill_betweenx(level,demin,demax,color="C0",alpha=0.2,label="Min-max range")
 ax3.fill_betweenx(level,dep10,dep90,color="C0",alpha=0.5,label="10-90% range")
+
+cmap = ColorMap("viridis")
+for i in 1:length(L)
+    ax2.plot([1e-15,1e-14],[L[i],L[i]].-0.5,color=cmap(i/length(L)),lw=2)
+    ax2.text(2e-14,L[i],"$i")
+end
+ax2.text(1.5e-15,8,"modes")
 
 ax.set_title(L"NO$_2$ vertical distribution")
 ax2.set_title(L"NO$_2$ reconstructed from 20 PCs")
@@ -95,26 +110,9 @@ ax.set_ylabel("model level")
 ax.set_xlabel("mixing ratio kg/kg")
 ax2.set_xlabel("mixing ratio kg/kg")
 ax.set_ylim(137,1)
-ax.legend(loc=2)
+ax.legend(loc=2,scatterpoints=3)
 
 ax.set_xlim(1e-15,1e-7)
 ax2.set_xlim(1e-15,1e-7)
 
-tight_layout()
-
-##
-modes = Array(10:79)
-
-fig,ax1 = subplots(1,1)
-
-ax1.semilogy(modes,gm[:,1],"C0",lw=3,label="mean")
-ax1.plot(modes,gm[:,2],"C0",lw=1.5,label="median")
-ax1.fill_between(modes,gm[:,3],gm[:,4],color="C0",alpha=0.2,label="Min-max range")
-ax1.fill_between(modes,gm[:,5],gm[:,6],color="C0",alpha=0.5,label="10-90% range")
-ax1.legend(loc=1)
-
-ax1.set_title("Decimal error by modes",loc="left")
-ax1.set_ylabel("Decimal error")
-ax1.set_xlabel("number of modes used")
-ax1.set_xlim(10,79)
 tight_layout()
