@@ -1,5 +1,10 @@
 module Elefridge
 
-greet() = print("Hello World!")
+    export LinQuant8Array, LinQuant16Array
+    LinQuant24Array, LinQuant32Array
 
-end # module
+    include("binarytree.jl")
+    include("linquantarray.jl")
+    include("logquantarray.jl")
+
+end
