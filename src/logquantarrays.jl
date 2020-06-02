@@ -9,3 +9,6 @@ struct LogQuant24Array{N} <: AbstractArray{UInt32, N}
     min::Float64
     max::Float64
 end
+
+LogQuantArray = Union{LogQuant16Array,LogQuant24Array}
+QuantArray = Union{LinQuantArray,LogQuantArray}

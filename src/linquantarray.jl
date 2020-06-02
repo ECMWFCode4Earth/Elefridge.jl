@@ -16,11 +16,11 @@ struct LinQuant24Array{N} <: AbstractArray{UInt32, N}
     max::Float64
 end
 
-struct LinQuant32Array{N} <: AbstractArray{UInt32, N}
-    A::AbstractArray{UInt32,N}
-    min::Float64
-    max::Float64
-end
+# struct LinQuant32Array{N} <: AbstractArray{UInt32, N}
+#     A::AbstractArray{UInt32,N}
+#     min::Float64
+#     max::Float64
+# end
 
 LinQuantArray = Union{  LinQuant8Array,
                         LinQuant16Array,
@@ -39,7 +39,7 @@ function whichUInt(n::Integer)
     throw(error("Only n=6,16,24,32 supported."))
 end
 
-function LinQuantArray(n::Integer,A::AbstractArray)
+function LinQuantization(n::Integer,A::AbstractArray)
     Amin = Float64(minimum(A))
     Amax = Float64(maximum(A))
 
@@ -49,7 +49,7 @@ function LinQuantArray(n::Integer,A::AbstractArray)
 
     s = size(A)
     T = whichUInt(n)
-    Q = Array{T,length(s}(undef,s...)
+    Q = Array{T,length(s)}(undef,s...)
 
     for i in eachindex(Q)
         Q[i] = findFirstSmaller(Float64(A[i]),bounds)-1
@@ -58,13 +58,14 @@ function LinQuantArray(n::Integer,A::AbstractArray)
     return Q,Amin,Amax
 end
 
-LinQuant8Array(A::AbstractArray) = LinQuant8Array(LinQuantArray(8,A)...)
-LinQuant16Array(A::AbstractArray) = LinQuant16Array(LinQuantArray(16,A)...)
-LinQuant24Array(A::AbstractArray) = LinQuant24Array(LinQuantArray(24,A)...)
-LinQuant32Array(A::AbstractArray) = LinQuant32Array(LinQuantArray(32,A)...)
+LinQuant8Array(A::AbstractArray) = LinQuant8Array(LinQuantization(8,A)...)
+LinQuant16Array(A::AbstractArray) = LinQuant16Array(LinQuantization(16,A)...)
+LinQuant24Array(A::AbstractArray) = LinQuant24Array(LinQuantization(24,A)...)
+# LinQuant32Array(A::AbstractArray) = LinQuant32Array(LinQuantization(32,A)...)
 
-function Array{T}(n::Integer,Q::LinQuantArray{N}) where {T,N}
-    A = Array{T,N}(undef,size(Q)...)
+function Array{T}(n::Integer,Q::LinQuantArray) where T
+    s = size(Q)
+    A = Array{T,length(s)}(undef,s...)
     Qmin = T(Q.min)
     Qmax = T(Q.max)
     Δ = (Qmax-Qmin)/(2^n-1)
@@ -78,4 +79,9 @@ end
 Array{T}(Q::LinQuant8Array) where T = Array{T}(8,Q)
 Array{T}(Q::LinQuant16Array) where T = Array{T}(16,Q)
 Array{T}(Q::LinQuant24Array) where T = Array{T}(24,Q)
-Array{T}(Q::LinQuant32Array) where T = Array{T}(32,Q)
+# Array{T}(Q::LinQuant32Array) where T = Array{T}(32,Q)
+
+Array(Q::LinQuant8Array) = Array{Float32}(8,Q)
+Array(Q::LinQuant16Array) = Array{Float32}(16,Q)
+Array(Q::LinQuant24Array) = Array{Float32}(24,Q)
+# Array(Q::LinQuant32Array) = Array{Float32}(32,Q)
