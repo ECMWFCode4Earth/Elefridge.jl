@@ -11,7 +11,7 @@ struct LogQuant16Array{N} <: AbstractArray{UInt16, N}
 end
 
 struct LogQuant24Array{N} <: AbstractArray{UInt32, N}
-    A::AbstractArray{UInt32,N}
+    A::AbstractArray{UInt24,N}
     min::Float64
     max::Float64
 end
@@ -46,7 +46,7 @@ function LogQuantization(n::Integer,A::AbstractArray)
     Q = Array{T,length(s)}(undef,s...)
 
     for i in eachindex(Q)
-        Q[i] = findFirstSmaller(Float64(A[i]),bounds)-1
+        Q[i] = findFirstSmaller(Float64(A[i]),bounds)
     end
 
     return Q,logmin,logmax
