@@ -11,7 +11,7 @@ function ispower2(x::Integer)
     return false
 end
 
-function findFirstSmaller(x::Float64,v::Array{Float64,1})
+function findFirstSmaller(x::T,v::Array{T,1}) where T
 
     l = length(v)-1
     @boundscheck ispower2(l) || throw(BoundsError())
