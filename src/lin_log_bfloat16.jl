@@ -19,8 +19,9 @@ level = 1:size(no2)[1]
 trainSonum16(no2)
 
 no2lin24 = Array{Float32}(LinQuant24Array(no2))
+Q = LogQuant16Array(no2);
 no2log16 = Array{Float32}(LogQuant16Array(no2))
-no2bf16 = Float32.(BFloat16.(no2))
+no2bf16 = Float32.(BFloat16.(no2'))
 no2s16 = Float32.(Sonum16.(no2))
 
 ## error 24bit
