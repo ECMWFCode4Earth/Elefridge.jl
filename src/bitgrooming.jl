@@ -1,22 +1,44 @@
-function shave(x::Float32,nsb::Integer)
+function shave(x::Float32,mask::UInt32)
     ui = reinterpret(UInt32,x)
-    mask = UInt32(2^(23-nsb)-1)
-    ui &= ~mask
+    ui &= mask
     return reinterpret(Float32,ui)
 end
 
-function set_one(x::Float32,nsb::Integer)
+shave(x::Float32,nsb::Integer) = shave(x,~UInt32(2^(23-nsb)-1))
+
+function shave(X::AbstractArray{Float32},nsb::Integer)
+    mask = ~UInt32(2^(23-nsb)-1)
+    return shave.(X,mask)
+end
+
+function set_one(x::Float32,mask::UInt32)
     ui = reinterpret(UInt32,x)
-    mask = UInt32(2^(23-nsb)-1)
     ui |= mask
     return reinterpret(Float32,ui)
 end
 
+set_one(x::Float32,nsb::Integer) = set_one(x,UInt32(2^(23-nsb)-1))
+
+function set_one(X::AbstractArray{Float32},nsb::Integer)
+    mask = UInt32(2^(23-nsb)-1)
+    return set_one.(X,mask)
+end
+
 function groom(X::AbstractArray{Float32},nsb::Integer)
     Y = similar(X)
-    Y[1:2:end] .= shave.(X[1:2:end],nsb)
-    Y[2:2:end] .= set_one.(X[2:2:end],nsb)
+    mask = UInt32(2^(23-nsb)-1)
+    mask_inv = ~mask
+    for i in 1:2:length(X)-1
+        Y[i] = shave(X[i],mask_inv)
+        Y[i+1] = set_one(X[i],mask)
+    end
     return Y
+end
+
+function round(x::Float32,nsb::Integer)
+    ui = reinterpret(UInt32,x)
+    ui += 0x7fff + ((ui >> 16) & 1)
+    return reinterpret(Float32,(ui % UInt32) & 0xffff0000)
 end
 
 nsb(nsd::Integer) = Integer(ceil(log(10)/log(2)*nsd))
