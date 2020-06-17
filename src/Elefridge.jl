@@ -9,8 +9,8 @@ module Elefridge
     using BitIntegers
     BitIntegers.@define_integers 24
 
-    include("linquantarray.jl")
-    include("logquantarray.jl")
+    include("linquantarrays.jl")
+    include("logquantarrays.jl")
     include("bitentropy.jl")
     include("bitgrooming.jl")
 
