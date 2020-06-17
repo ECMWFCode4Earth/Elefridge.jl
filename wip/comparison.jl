@@ -1,86 +1,49 @@
-using Statistics, StatsBase
-using PyCall
-xr = pyimport("xarray")
-using PyPlot
+# using Statistics, StatsBase
+# using PyCall
+# xr = pyimport("xarray")
+# using PyPlot
+#
+# path = "/Users/milan/cams"
+# allvars = ["no2","go3","so2","aermr04","aermr05","aermr06","ch4","co"]
+#
+# M = Array{Float32,3}(undef,length(allvars),6,137)
+#
+# for (i,vari) in enumerate(allvars)
+#     filelist = filter(x->endswith(x,vari*".grib"),readdir(path))
+#     X = xr.open_dataset(joinpath(path,filelist[1]),engine="cfgrib")[vari].data
+#
+#     M[i,1,:] = mean(X,dims=2)[:,1]
+#     M[i,2,:] = median(X,dims=2)[:,1]
+#     M[i,3,:] = minimum(X,dims=2)[:,1]
+#     M[i,4,:] = maximum(X,dims=2)[:,1]
+#     M[i,5,:] = [percentile(vec(X[i,:]),10) for i in level]
+#     M[i,6,:] = [percentile(vec(X[i,:]),90) for i in level]
+# end
 
-path = "/Users/milan/cams"
-filelist = filter(x->endswith(x,"no2.grib"),readdir(path))
-gribfile = xr.open_dataset(joinpath(path,filelist[1]),engine="cfgrib")
-no2 = gribfile.no2.values
-level = 1:size(no2)[1]
+# plotting
+level = 1:137
+alphabet = ["a","b","c","d","e","f","g","h","i","j"]
 
-no2lin24 = Array{Float32}(LinQuant24Array(no2))
-no2log16 = Array{Float32}(LogQuant16Array(no2))
-no2bf16 = round(no2,7)
+fig,axs = subplots(2,4,figsize=(10,8),sharey=true)
+axs[1,1].invert_yaxis()
 
-## error 24bit
-de = abs.(log10.(no2 ./ no2lin24))
+for (i,ax) in enumerate(axs)
+    ax.semilogx(M[i,1,:],level,"C0",lw=3,label="mean")
+    ax.plot(M[i,2,:],level,"C0",lw=1.5,label="median")
+    ax.fill_betweenx(level,M[i,3,:],M[i,4,:],color="C0",alpha=0.2,label="Min-max range")
+    ax.fill_betweenx(level,M[i,5,:],M[i,6,:],color="C0",alpha=0.5,label="10-90% range")
+    ax.set_title(allvars[i],loc="left")
+    ax.set_title(alphabet[i],loc="right",fontweight="bold")
+end
 
-de24m = mean(de)
-de24mi = median(de,dims=2)[:,1]
-de24min = minimum(de,dims=2)[:,1]
-de24max = maximum(de,dims=2)[:,1]
-de24p10 = [percentile(vec(de[i,:]),10) for i in level]
-de24p90 = [percentile(vec(de[i,:]),90) for i in level]
+axs[2,1].legend(loc=2)
 
-# and with 16
-de = abs.(log10.(no2 ./ no2log16))
+axs[1,1].set_ylim(137,1)
+axs[1,1].set_ylabel("model level")
+axs[2,1].set_ylabel("model level")
+axs[2,1].set_xlabel("values")
+axs[2,2].set_xlabel("values")
+axs[2,3].set_xlabel("values")
+axs[2,4].set_xlabel("values")
 
-de16m = mean(de,dims=2)[:,1]
-de16mi = median(de,dims=2)[:,1]
-de16min = minimum(de,dims=2)[:,1]
-de16max = maximum(de,dims=2)[:,1]
-de16p10 = [percentile(vec(de[i,:]),10) for i in level]
-de16p90 = [percentile(vec(de[i,:]),90) for i in level]
-
-# and for bfoat16 = bitgrooming
-de = abs.(log10.(no2 ./ no2bf16))
-
-debf16m = mean(de,dims=2)[:,1]
-debf16mi = median(de,dims=2)[:,1]
-debf16min = minimum(de,dims=2)[:,1]
-debf16max = maximum(de,dims=2)[:,1]
-debf16p10 = [percentile(vec(de[i,:]),10) for i in level]
-debf16p90 = [percentile(vec(de[i,:]),90) for i in level]
-
-# and for bfoat16 = bitgrooming
-de = abs.(log10.(no2 ./ no2s16))
-
-des16m = mean(de,dims=2)[:,1]
-des16mi = median(de,dims=2)[:,1]
-des16min = minimum(de,dims=2)[:,1]
-des16max = maximum(de,dims=2)[:,1]
-des16p10 = [percentile(vec(de[i,:]),10) for i in level]
-des16p90 = [percentile(vec(de[i,:]),90) for i in level]
-
-## plot
-fig,ax = subplots(1,1,figsize=(6,10))
-ax.invert_yaxis()
-
-ax.semilogx(de24m,level,"C0",lw=3,label="24-bit lin")
-ax.semilogx(de16m,level,"C1",lw=3,label="16-bit log")
-ax.semilogx(debf16m,level,"C2",lw=3,label="bfloat16")
-ax.semilogx(des16m,level,"C3",lw=3,label="15-bit max-entropy")
-
-ax.semilogx(de24p90,level,"C0",lw=2)
-ax.semilogx(de16p90,level,"C1",lw=2)
-ax.semilogx(debf16p90,level,"C2",lw=2)
-ax.semilogx(des16p90,level,"C3",lw=2)
-
-ax.semilogx(de24max,level,"C0",lw=1)
-ax.semilogx(de16max,level,"C1",lw=1)
-ax.semilogx(debf16max,level,"C2",lw=1)
-ax.semilogx(des16max,level,"C3",lw=1)
-
-ax.plot(0,0,"grey",lw=3,label="mean")
-ax.plot(0,0,"grey",lw=2,label="90%")
-ax.plot(0,0,"grey",lw=1,label="max")
-
-ax.set_title(L"NO$_2$ compression error")
-ax.set_ylabel("model level")
-ax.set_xlabel("decimal error")
-ax.set_ylim(137,1)
-ax.legend(loc=3,ncol=2)
-
-# a‚x.set_xlim(1e-7,1)
 tight_layout()
