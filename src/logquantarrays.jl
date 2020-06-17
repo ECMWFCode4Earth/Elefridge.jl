@@ -28,28 +28,19 @@ function LogQuantization(n::Integer,A::AbstractArray)
     any(A .<= zero(eltype(A))) && throw(DomainError(
                     "LogQuantization only for positive arguments."))
 
-    logmin = log10(Float64(minimum(A)))
-    logmax = log10(Float64(maximum(A)))
-
-    Δ = (logmax-logmin)/(2^n-1)
-    bounds = Array{Float64,1}(undef,2^n+1)
-    bounds[1] = logmin          # bounds in log space
-    bounds[2] = logmin + Δ/2
-    bounds[end] = logmax
-    for i in 2:2^n
-        bounds[i] = bounds[i-1]+Δ
-    end
-    bounds = 10.0 .^ bounds     # only now convert to lin space
+    logmin = log(minimum(A))
+    logmax = log(maximum(A))
+    Δ = (2^n-1)/(logmax-logmin)
 
     s = size(A)
     T = whichUInt(n)
     Q = Array{T,length(s)}(undef,s...)
 
     for i in eachindex(Q)
-        Q[i] = findFirstSmaller(Float64(A[i]),bounds)
+        Q[i] = T(round((log(A[i])-logmin)*Δ))
     end
 
-    return Q,logmin,logmax
+    return Q,Float64(logmin),Float64(logmax)
 end
 
 LogQuant8Array(A::AbstractArray) = LogQuant8Array(LogQuantization(8,A)...)
@@ -65,7 +56,7 @@ function Array{T}(n::Integer,Q::LogQuantArray) where T
 
     ten = T(10)
     for i in eachindex(A)
-        A[i] = ten^(Qlogmin + Q[i]*Δ)
+        A[i] = exp(Qlogmin + Q[i]*Δ)
     end
     return A
 end
