@@ -35,24 +35,16 @@ function whichUInt(n::Integer)
 end
 
 function LinQuantization(n::Integer,A::AbstractArray)
-    Amin = Float64(minimum(A))
-    Amax = Float64(maximum(A))
-
-    Δ = (Amax-Amin)/(2^n-1)
-    bounds = Array{Float64,1}(undef,2^n+1)
-    bounds[1] = Amin
-    bounds[2] = Amin + Δ/2
-    bounds[end] = Amax
-    for i in 2:2^n
-        bounds[i] = bounds[i-1]+Δ
-    end
+    Amin = minimum(A)
+    Amax = maximum(A)
+    Δ = (2^n-1)/(Amax-Amin)
 
     s = size(A)
     T = whichUInt(n)
     Q = Array{T,length(s)}(undef,s...)
 
     for i in eachindex(Q)
-        Q[i] = findFirstSmaller(Float64(A[i]),bounds)-1
+        Q[i] = T(round((A[i]-Amin)*Δ))
     end
 
     return Q,Amin,Amax
