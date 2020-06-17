@@ -1,6 +1,3 @@
-using BitIntegers
-BitIntegers.@define_integers 24
-
 struct LinQuant8Array{N} <: AbstractArray{UInt8, N}
     A::AbstractArray{UInt8,N}
     min::Float64
