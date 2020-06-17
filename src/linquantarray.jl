@@ -35,8 +35,8 @@ function whichUInt(n::Integer)
 end
 
 function LinQuantization(n::Integer,A::AbstractArray)
-    Amin = minimum(A)
-    Amax = maximum(A)
+    Amin = Float64(minimum(A)) # some precision issue when using Float32
+    Amax = Float64(maximum(A))
     Δ = (2^n-1)/(Amax-Amin)
 
     s = size(A)
@@ -47,7 +47,7 @@ function LinQuantization(n::Integer,A::AbstractArray)
         Q[i] = T(round((A[i]-Amin)*Δ))
     end
 
-    return Q,Amin,Amax
+    return Q,Float64(Amin),Float64(Amax)
 end
 
 LinQuant8Array(A::AbstractArray) = LinQuant8Array(LinQuantization(8,A)...)
