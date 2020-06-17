@@ -28,18 +28,20 @@ function groom(X::AbstractArray{Float32},nsb::Integer)
     Y = similar(X)
     mask = UInt32(2^(23-nsb)-1)
     mask_inv = ~mask
-    for i in 1:2:length(X)-1
+    @inbounds for i in 1:2:length(X)-1
         Y[i] = shave(X[i],mask_inv)
         Y[i+1] = set_one(X[i],mask)
     end
     return Y
 end
 
-function round(x::Float32,nsb::Integer)
+function Base.round(x::Float32,nsb::Integer)
     ui = reinterpret(UInt32,x)
-    ui += 0x7fff + ((ui >> 16) & 1)
-    return reinterpret(Float32,(ui % UInt32) & 0xffff0000)
+    ui += 0x0000_7fff + ((ui >> 16) & 0x0000_0001)
+    return reinterpret(Float32,ui & 0xffff0000)
 end
+
+Base.round(X::AbstractArray{Float32},nsb::Integer) = round.(X,nsb)
 
 nsb(nsd::Integer) = Integer(ceil(log(10)/log(2)*nsd))
 
