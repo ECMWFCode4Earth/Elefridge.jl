@@ -1,7 +1,3 @@
-using BitIntegers
-BitIntegers.@define_integers 24
-include("binarytree.jl")
-
 struct LinQuant8Array{N} <: AbstractArray{UInt8, N}
     A::AbstractArray{UInt8,N}
     min::Float64

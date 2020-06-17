@@ -1,11 +1,6 @@
-using NetCDF, LinearAlgebra
 using Statistics, StatsBase
 using PyCall
 xr = pyimport("xarray")
-#pygui(:qt)
-using PyPlot
-using MultivariateStats
-# eofs = pyimport("eofs")
 
 path = "/Users/milan/Downloads/cams/ieee"
 filelist = filter(x->endswith(x,"no2.grib"),readdir(path))
