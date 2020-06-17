@@ -3,6 +3,10 @@ uuid = "58f94afb-784a-4835-8bee-a1e3db8ee16f"
 authors = ["milankl"]
 version = "0.1.0"
 
+[deps]
+BitIntegers = "c3b6d118-76ef-56ca-8cc7-ebb389d030a1"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+
 [compat]
 julia = "1"
 
