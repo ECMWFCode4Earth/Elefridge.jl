@@ -31,12 +31,6 @@ function groom(X::AbstractArray{Float32},nsb::Integer)
     return Y
 end
 
-function Base.round(x::Float32,nsb::Integer)
-    ui = reinterpret(UInt32,x)
-    ui += 0x0000_7fff + ((ui >> 16) & 0x0000_0001)
-    return reinterpret(Float32,ui & 0xffff0000)
-end
-
 shift(nsb::Integer) = 23-nsb
 setmask(nsb::Integer) = 0x003f_ffff >> nsb
 
@@ -54,54 +48,8 @@ Base.round(x::Float32,nsb::Integer) = round(x,setmask(nsb),shift(nsb),~mask(nsb)
 function Base.round(X::AbstractArray{Float32},nsb::Integer)
     semask = setmask(nsb)
     s = shift(nsb)
-    shmask = shavemask(nsb)
+    shmask = ~mask(nsb)
     return round.(X,semask,s,shmask)
 end
 
 nsb(nsd::Integer) = Integer(ceil(log(10)/log(2)*nsd))
-
-# Some tests
-using Statistics
-
-A = Array{Float32}(1:1e-6:2-1e-6)
-Ao = set_one(A,8)
-As = shave(A,8)
-Ar = round.(A,sigdigits=9,base=2)
-Ag = groom(A,8)
-
-# check bits that are always zero
-zero_check = UInt32(0)
-for x in As
-    global zero_check |= reinterpret(UInt32,x)
-end
-bitstring(zero_check)
-
-# bias?
-mean(As)-mean(A)
-mean(Ao)-mean(A)
-mean(Ar)-mean(A)
-mean(Ag)-mean(A)
-
-# mean error
-mean(As-A)
-mean(Ao-A)
-mean(Ar-A)
-mean(Ag-A)
-
-# mean absolute error
-mean(abs.(As-A))
-mean(abs.(Ao-A))
-mean(abs.(Ar-A))
-mean(abs.(Ag-A))
-
-# max absolute error
-maximum(abs.(As-A))
-maximum(abs.(Ao-A))
-maximum(abs.(Ar-A))
-maximum(abs.(Ag-A))
-
-# max decimal error
-maximum(abs.(log10.(As./A)))
-maximum(abs.(log10.(Ao./A)))
-maximum(abs.(log10.(Ar./A)))
-maximum(abs.(log10.(Ag./A)))
