@@ -26,7 +26,7 @@ function groom(X::AbstractArray{Float32},nsb::Integer)
     mask0 = ~mask1
     @inbounds for i in 1:2:length(X)-1
         Y[i] = shave(X[i],mask0)
-        Y[i+1] = set_one(X[i],mask1)
+        Y[i+1] = set_one(X[i+1],mask1)
     end
     return Y
 end
