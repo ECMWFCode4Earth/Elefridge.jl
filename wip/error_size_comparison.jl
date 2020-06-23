@@ -6,7 +6,7 @@ using Elefridge
 
 path = "/Users/milan/cams"
 allvars = ["no2","go3","so2","aermr04","aermr05","aermr06","ch4","co"]
-vari = allvars[1]
+vari = allvars[3]
 
 filelist = filter(x->endswith(x,vari*".grib"),readdir(path))
 X = xr.open_dataarray(joinpath(path,filelist[1]),engine="cfgrib").data
