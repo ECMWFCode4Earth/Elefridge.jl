@@ -13,8 +13,8 @@ TranscodingStreams.initialize(DeflateCompressorL9)
 TranscodingStreams.initialize(ZstdCompressorL22)
 
 path = "/Users/milan/cams"
-#allvars = ["no2","go3","so2","aermr04","aermr05","aermr06","ch4","co"]
-allvars = ["co2","no","clwc","ciwc","t","w"]
+allvars = ["no2","go3","so2","aermr04","aermr05","aermr06","ch4","co"]
+# allvars = ["co2","no","clwc","ciwc","t","w"]
 
 for vari in [allvars[1]]
     println("--------")
@@ -40,7 +40,7 @@ for vari in [allvars[1]]
 
     ## LinQuant24
     EV[1,1] = 32/24     # compression factor
-    Xc = Array{Float32}(LinQuant24Array(X))
+    @time Xc = Array{Float32}(LinQuant24Array(X))
     err = abs.(log10.(X ./ Xc))     # decimal error
     EV[1,2] = mean(err)
     EV[1,3] = median(err)
@@ -55,7 +55,7 @@ for vari in [allvars[1]]
 
     # LoqQuant16
     EV[2,1] = 2
-    Xc = Array{Float32}(LogQuant16Array(X))
+    #Xc = Array{Float32}(LogQuant16Array(X))
     err = abs.(log10.(X ./ Xc))
     EV[2,2] = mean(err)
     EV[2,3] = median(err)
@@ -76,7 +76,7 @@ for vari in [allvars[1]]
     EV[3,4] = percentile(vec(err),90)
     EV[3,5] = maximum(err)
     Blosc.set_compressor("blosclz")
-    Xcc = compress(Xc,level=9)
+    @time Xcc = compress(Xc,level=9)
     EV[3,1] = sizeof(Xc)/sizeof(Xcc)
     println("RN16+Blosc: CF=$(EV[3,1])")
 
@@ -92,63 +92,63 @@ for vari in [allvars[1]]
     # RoundNearest16 + LZ4HC
     EV[4,2:9] = EV[3,2:9]
     Blosc.set_compressor("lz4hc")
-    Xcc = compress(Xc,level=9)
+    @time Xcc = compress(Xc,level=9)
     EV[4,1] = sizeof(Xc)/sizeof(Xcc)
     println("RN16+LZ4HC: CF=$(EV[4,1])")
 
     # RoundNearest16 + Zstd
     EV[5,2:9] = EV[3,2:9]
-    Xcc = transcode(ZstdCompressorL22,Xc8)
+    @time Xcc = transcode(ZstdCompressorL22,Xc8)
     EV[5,1] = sizeof(Xc)/sizeof(Xcc)
     println("RN16+Zstd: CF=$(EV[5,1])")
 
     # RoundNearest16 + Deflate
     EV[6,2:9] = EV[3,2:9]
-    Xcc = transcode(DeflateCompressorL9,Xc8)
+    @time Xcc = transcode(DeflateCompressorL9,Xc8)
     EV[6,1] = sizeof(Xc)/sizeof(Xcc)
     println("RN16+Deflate: CF=$(EV[6,1])")
 
-    # RoundNearest24 + Blosc
-    Xc = round(X,15)
-    err = abs.(log10.(X ./ Xc))
-    EV[7,2] = mean(err)
-    EV[7,3] = median(err)
-    EV[7,4] = percentile(vec(err),90)
-    EV[7,5] = maximum(err)
-    Blosc.set_compressor("blosclz")
-    Xcc = compress(Xc,level=9)
-    EV[7,1] = sizeof(Xc)/sizeof(Xcc)
-
-    err = abs.(X.-Xc)
-    EV[7,6] = mean(err)
-    EV[7,7] = median(err)
-    EV[7,8] = percentile(vec(err),90)
-    EV[7,9] = maximum(err)
-
-    # create a UInt8 view
-    Xc8 = unsafe_wrap(Array, Ptr{UInt8}(pointer(Xc)), sizeof(Xc))
-
-    # RoundNearest16 + LZ4
-    EV[8,2:9] = EV[7,2:9]
-    Blosc.set_compressor("lz4hc")
-    Xcc = compress(Xc,level=9)
-    EV[8,1] = sizeof(Xc)/sizeof(Xcc)
-
-    # RoundNearest16 + Zstd
-    EV[9,2:9] = EV[7,2:9]
-    Xcc = transcode(ZstdCompressorL22,Xc8)
-    EV[9,1] = sizeof(Xc)/sizeof(Xcc)
-
-    # RoundNearest16 + Deflate
-    EV[10,2:9] = EV[7,2:9]
-    Xcc = transcode(DeflateCompressorL9,Xc8)
-    EV[10,1] = sizeof(Xc)/sizeof(Xcc)
-
-    # just lz4hc
-    Blosc.set_compressor("lz4hc")
-    Xcc = compress(X,level=9)
-    lz4hcc = sizeof(X)/sizeof(Xcc)
-
-    save("cams/error/$vari.jld","EV",EV,"lz4",lz4hcc)
-    println("$vari stored.")
+    # # RoundNearest24 + Blosc
+    # Xc = round(X,15)
+    # err = abs.(log10.(X ./ Xc))
+    # EV[7,2] = mean(err)
+    # EV[7,3] = median(err)
+    # EV[7,4] = percentile(vec(err),90)
+    # EV[7,5] = maximum(err)
+    # Blosc.set_compressor("blosclz")
+    # Xcc = compress(Xc,level=9)
+    # EV[7,1] = sizeof(Xc)/sizeof(Xcc)
+    #
+    # err = abs.(X.-Xc)
+    # EV[7,6] = mean(err)
+    # EV[7,7] = median(err)
+    # EV[7,8] = percentile(vec(err),90)
+    # EV[7,9] = maximum(err)
+    #
+    # # create a UInt8 view
+    # Xc8 = unsafe_wrap(Array, Ptr{UInt8}(pointer(Xc)), sizeof(Xc))
+    #
+    # # RoundNearest16 + LZ4
+    # EV[8,2:9] = EV[7,2:9]
+    # Blosc.set_compressor("lz4hc")
+    # Xcc = compress(Xc,level=9)
+    # EV[8,1] = sizeof(Xc)/sizeof(Xcc)
+    #
+    # # RoundNearest16 + Zstd
+    # EV[9,2:9] = EV[7,2:9]
+    # Xcc = transcode(ZstdCompressorL22,Xc8)
+    # EV[9,1] = sizeof(Xc)/sizeof(Xcc)
+    #
+    # # RoundNearest16 + Deflate
+    # EV[10,2:9] = EV[7,2:9]
+    # Xcc = transcode(DeflateCompressorL9,Xc8)
+    # EV[10,1] = sizeof(Xc)/sizeof(Xcc)
+    #
+    # # just lz4hc
+    # Blosc.set_compressor("lz4hc")
+    # Xcc = compress(X,level=9)
+    # lz4hcc = sizeof(X)/sizeof(Xcc)
+    #
+    # save("cams/error/$vari.jld","EV",EV,"lz4",lz4hcc)
+    # println("$vari stored.")
 end
