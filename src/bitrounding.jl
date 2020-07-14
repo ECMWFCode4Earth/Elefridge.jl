@@ -5,9 +5,9 @@ shift32(nsb::Integer) = 23-nsb  # Float32 version
 shift64(nsb::Integer) = 52-nsb  # Float64 version
 
 """Creates a mask for bit-setting given `nsb` bits to be retained in the
-significand."""
+significand. Does not mask the first significant bit for rounding."""
 setmask32(nsb::Integer) = 0x003f_ffff >> nsb
-setmask64(nsb::Integer) = 0x000f_ffff_ffff_ffff >> nsb
+setmask64(nsb::Integer) = 0x0007_ffff_ffff_ffff >> nsb
 
 """Round to nearest for Float32 arithmetic, using only integer
 arithmetic. `setmask`,`shift`,`shavemask` have to be provided that depend
