@@ -9,9 +9,12 @@ module Elefridge
     using BitIntegers
     BitIntegers.@define_integers 24
 
+    export UInt24
+
     include("linquantarrays.jl")
     include("logquantarrays.jl")
     include("bitentropy.jl")
     include("bitgrooming.jl")
+    include("bitrounding.jl")
 
 end
