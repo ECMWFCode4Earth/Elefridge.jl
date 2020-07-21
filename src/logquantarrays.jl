@@ -6,6 +6,7 @@ end
 
 Base.size(QA::LogQuantArray) = size(QA.A)
 Base.getindex(QA::LogQuantArray,i...) = getindex(QA.A,i...)
+Base.eltype(Q::LogQuantArray{T,N}) where {T,N} = T
 
 function LogQuantization(n::Integer,A::Array{T2,N}) where {T2,N}
 

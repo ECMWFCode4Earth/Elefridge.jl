@@ -1,6 +1,7 @@
 module Elefridge
 
-    export LinQuant8Array, LinQuant16Array, LinQuant24Array,
+    export  LinQuantArray, LogQuantArray, 
+        LinQuant8Array, LinQuant16Array, LinQuant24Array,
         LogQuant8Array, LogQuant16Array, LogQuant24Array,
         bitentropy, shave, set_one, groom
 

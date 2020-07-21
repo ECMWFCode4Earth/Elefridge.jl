@@ -6,6 +6,7 @@ end
 
 Base.size(QA::LinQuantArray) = size(QA.A)
 Base.getindex(QA::LinQuantArray,i...) = getindex(QA.A,i...)
+Base.eltype(Q::LinQuantArray{T,N}) where {T,N} = T
 
 function whichUInt(n::Integer)
     n == 8 && return UInt8
