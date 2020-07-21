@@ -1,29 +1,13 @@
-struct LogQuant8Array{N} <: AbstractArray{UInt8, N}
-    A::AbstractArray{UInt8,N}
+struct LogQuantArray{T,N} <: AbstractArray{Unsigned, N}
+    A::Array{T,N}
     min::Float64
     max::Float64
 end
-
-struct LogQuant16Array{N} <: AbstractArray{UInt16, N}
-    A::AbstractArray{UInt16,N}
-    min::Float64
-    max::Float64
-end
-
-struct LogQuant24Array{N} <: AbstractArray{UInt32, N}
-    A::AbstractArray{UInt24,N}
-    min::Float64
-    max::Float64
-end
-
-LogQuantArray = Union{  LogQuant8Array,
-                        LogQuant16Array,
-                        LogQuant24Array}
 
 Base.size(QA::LogQuantArray) = size(QA.A)
 Base.getindex(QA::LogQuantArray,i...) = getindex(QA.A,i...)
 
-function LogQuantization(n::Integer,A::AbstractArray)
+function LogQuantization(n::Integer,A::Array{T2,N}) where {T2,N}
 
     any(A .<= zero(eltype(A))) && throw(DomainError(
                     "LogQuantization only for positive arguments."))
@@ -32,39 +16,36 @@ function LogQuantization(n::Integer,A::AbstractArray)
     logmax = log(maximum(A))
     Δ = (2^n-1)/(logmax-logmin)
 
-    s = size(A)
     T = whichUInt(n)
-    Q = Array{T,length(s)}(undef,s...)
+    Q = similar(A,T)
 
-    for i in eachindex(Q)
-        Q[i] = T(round((log(A[i])-logmin)*Δ))
-    end
+    @. @views Q = T(round((log(A)-logmin)*Δ))
 
-    return Q,Float64(logmin),Float64(logmax)
+    return LogQuantArray{T,N}(Q,Float64(logmin),Float64(logmax))
 end
 
-LogQuant8Array(A::AbstractArray) = LogQuant8Array(LogQuantization(8,A)...)
-LogQuant16Array(A::AbstractArray) = LogQuant16Array(LogQuantization(16,A)...)
-LogQuant24Array(A::AbstractArray) = LogQuant24Array(LogQuantization(24,A)...)
+LogQuant8Array(A::Array{T,N}) where {T,N} = LogQuantization(8,A)
+LogQuant16Array(A::Array{T,N}) where {T,N} = LogQuantization(16,A)
+LogQuant24Array(A::Array{T,N}) where {T,N} = LogQuantization(24,A)
 
 function Array{T}(n::Integer,Q::LogQuantArray) where T
-    s = size(Q)
-    A = Array{T,length(s)}(undef,s...)
     Qlogmin = T(Q.min)
     Qlogmax = T(Q.max)
     Δ = (Qlogmax-Qlogmin)/(2^n-1)
 
-    ten = T(10)
-    for i in eachindex(A)
+    A = similar(Q,T)
+
+    @inbounds for i in eachindex(A)
         A[i] = exp(Qlogmin + Q[i]*Δ)
     end
+
     return A
 end
 
-Array{T}(Q::LogQuant8Array) where T = Array{T}(8,Q)
-Array{T}(Q::LogQuant16Array) where T = Array{T}(16,Q)
-Array{T}(Q::LogQuant24Array) where T = Array{T}(24,Q)
+Array{T}(Q::LogQuantArray{UInt8,N}) where {T,N} = Array{T}(8,Q)
+Array{T}(Q::LogQuantArray{UInt16,N}) where {T,N} = Array{T}(16,Q)
+Array{T}(Q::LogQuantArray{UInt24,N}) where {T,N} = Array{T}(24,Q)
 
-Array(Q::LogQuant8Array) = Array{Float32}(8,Q)
-Array(Q::LogQuant16Array) = Array{Float32}(16,Q)
-Array(Q::LogQuant24Array) = Array{Float32}(24,Q)
+Array(Q::LogQuantArray{UInt8,N}) where N = Array{Float32}(8,Q)
+Array(Q::LogQuantArray{UInt16,N}) where N = Array{Float32}(16,Q)
+Array(Q::LogQuantArray{UInt24,N}) where N = Array{Float32}(24,Q)
