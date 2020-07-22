@@ -6,37 +6,57 @@ end
 
 Base.size(QA::LogQuantArray) = size(QA.A)
 Base.getindex(QA::LogQuantArray,i...) = getindex(QA.A,i...)
+Base.eltype(Q::LogQuantArray{T,N}) where {T,N} = T
 
-function LogQuantization(n::Integer,A::Array{T2,N}) where {T2,N}
+function LogQuantization(::Type{T},A::AbstractArray) where T
 
-    any(A .<= zero(eltype(A))) && throw(DomainError(
-                    "LogQuantization only for positive arguments."))
+    (any(A .< zero(eltype(A))) || ~all(isfinite.(A))) &&
+        throw(DomainError("LogQuantization only for positive&zero entries."))
 
-    logmin = log(minimum(A))
+    # min/max of non-zero entries
+    logmin = log(nzminimum(A))
     logmax = log(maximum(A))
-    Δ = (2^n-1)/(logmax-logmin)
 
-    T = whichUInt(n)
+    # throw error in case the range is zero.
+    logmin == logmax && throw(DomainError("Data range is zero."))
+
+    # range of values in log-space
+    # map min to 1 and max to ff..., reserve 0 for 0.
+    Δ = (2^(sizeof(T)*8)-2)/(logmax-logmin)
+
+    # preallocate output
     Q = similar(A,T)
 
-    @. @views Q = T(round((log(A)-logmin)*Δ))
+    for i in eachindex(A)
+        if iszero(A[i])
+            Q[i] = zero(T)
+        else
+            # TODO this is round-to-nearest in log-space
+            # change to round-to-nearest in lin-space
+            Q[i] = T(round((log(A[i])-logmin)*Δ))+one(T)
+        end
+    end
 
-    return LogQuantArray{T,N}(Q,Float64(logmin),Float64(logmax))
+    return LogQuantArray{T,ndims(Q)}(Q,Float64(logmin),Float64(logmax))
 end
 
-LogQuant8Array(A::Array{T,N}) where {T,N} = LogQuantization(8,A)
-LogQuant16Array(A::Array{T,N}) where {T,N} = LogQuantization(16,A)
-LogQuant24Array(A::Array{T,N}) where {T,N} = LogQuantization(24,A)
+LogQuant8Array(A::Array{T,N}) where {T,N} = LogQuantization(whichUInt(8),A)
+LogQuant16Array(A::Array{T,N}) where {T,N} = LogQuantization(whichUInt(16),A)
+LogQuant24Array(A::Array{T,N}) where {T,N} = LogQuantization(whichUInt(24),A)
 
 function Array{T}(n::Integer,Q::LogQuantArray) where T
     Qlogmin = T(Q.min)
     Qlogmax = T(Q.max)
-    Δ = (Qlogmax-Qlogmin)/(2^n-1)
+    Δ = (Qlogmax-Qlogmin)/(2^n-2) # -2 as 0x00.. is reserved for 0
 
     A = similar(Q,T)
 
     @inbounds for i in eachindex(A)
-        A[i] = exp(Qlogmin + Q[i]*Δ)
+        if iszero(Q[i])
+            A[i] = zero(T)
+        else
+            A[i] = exp(Qlogmin + (Q[i]-1)*Δ)
+        end
     end
 
     return A
