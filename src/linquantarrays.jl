@@ -25,7 +25,7 @@ function LinQuantization(::Type{T},A::AbstractArray) where T
     # determine the range
     Amin = Float64(minimum(A))
     Amax = Float64(maximum(A))
-    Δ = (2^(sizeof(n)*8)-1)/(Amax-Amin)     # range of values in linear space
+    Δ = (2^(sizeof(T)*8)-1)/(Amax-Amin)     # range of values in linear space
 
     # preallocate
     Q = similar(A,T)
