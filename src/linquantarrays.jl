@@ -12,17 +12,25 @@ function whichUInt(n::Integer)
     n == 8 && return UInt8
     n == 16 && return UInt16
     n == 24 && return UInt24
-    throw(error("Only n=8,16,24 supported."))
+    n == 32 && return UInt32
+    n == 40 && return UInt40
+    n == 48 && return UInt48
+    n == 56 && return UInt56
+    n == 64 && return UInt64
+    throw(error("Only n=8,16,24,32,40,48,56,64 supported."))
 end
 
 function LinQuantization(n::Integer,A::Array{T2,N}) where {T2,N}
-    Amin = Float64(minimum(A)) # some precision issue when using Float32
+
+    # determine the range
+    Amin = Float64(minimum(A))
     Amax = Float64(maximum(A))
-    Δ = (2^n-1)/(Amax-Amin)
+    Δ = (2^n-1)/(Amax-Amin)     # range of values in linear space
 
     T = whichUInt(n)
     Q = similar(A,T)
 
+    # map minimum to 0, maximum to ff
     @. @views Q = T(round((A-Amin)*Δ))
 
     return LinQuantArray{T,N}(Q,Amin,Amax)
