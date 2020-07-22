@@ -27,12 +27,13 @@ function LinQuantization(::Type{T},A::AbstractArray) where T
     Amax = Float64(maximum(A))
     Δ = (2^(sizeof(n)*8)-1)/(Amax-Amin)     # range of values in linear space
 
+    # preallocate
     Q = similar(A,T)
 
     # map minimum to 0, maximum to ff
     @. @views Q = T(round((A-Amin)*Δ))
 
-    return LinQuantArray{T,N}(Q,Amin,Amax)
+    return LinQuantArray{T,ndims(Q)}(Q,Amin,Amax)
 end
 
 LinQuant8Array(A::Array{T,N}) where {T,N} = LinQuantization(whichUInt(8),A)
