@@ -14,8 +14,8 @@ function LogQuantization(::Type{T},A::AbstractArray) where T
         throw(DomainError("LogQuantization only for positive&zero entries."))
 
     # min/max of non-zero entries
-    logmin = log(nzminimum(A))
-    logmax = log(maximum(A))
+    logmin = log(Float64(nzminimum(A)))
+    logmax = log(Float64(maximum(A)))
 
     # throw error in case the range is zero.
     logmin == logmax && throw(DomainError("Data range is zero."))
@@ -33,7 +33,7 @@ function LogQuantization(::Type{T},A::AbstractArray) where T
         else
             # TODO this is round-to-nearest in log-space
             # change to round-to-nearest in lin-space
-            Q[i] = T(round((log(A[i])-logmin)*Δ))+one(T)
+            Q[i] = T(round((log(Float64(A[i]))-logmin)*Δ))+one(T)
         end
     end
 
