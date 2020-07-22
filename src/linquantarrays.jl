@@ -20,14 +20,13 @@ function whichUInt(n::Integer)
     throw(error("Only n=8,16,24,32,40,48,56,64 supported."))
 end
 
-function LinQuantization(n::Integer,A::Array{T2,N}) where {T2,N}
+function LinQuantization(::Type{T},A::AbstractArray) where T
 
     # determine the range
     Amin = Float64(minimum(A))
     Amax = Float64(maximum(A))
-    Δ = (2^n-1)/(Amax-Amin)     # range of values in linear space
+    Δ = (2^(sizeof(n)*8)-1)/(Amax-Amin)     # range of values in linear space
 
-    T = whichUInt(n)
     Q = similar(A,T)
 
     # map minimum to 0, maximum to ff
@@ -36,9 +35,9 @@ function LinQuantization(n::Integer,A::Array{T2,N}) where {T2,N}
     return LinQuantArray{T,N}(Q,Amin,Amax)
 end
 
-LinQuant8Array(A::Array{T,N}) where {T,N} = LinQuantization(8,A)
-LinQuant16Array(A::Array{T,N}) where {T,N} = LinQuantization(16,A)
-LinQuant24Array(A::Array{T,N}) where {T,N} = LinQuantization(24,A)
+LinQuant8Array(A::Array{T,N}) where {T,N} = LinQuantization(whichUInt(8),A)
+LinQuant16Array(A::Array{T,N}) where {T,N} = LinQuantization(whichUInt(16),A)
+LinQuant24Array(A::Array{T,N}) where {T,N} = LinQuantization(whichUInt(24),A)
 
 function Array{T}(n::Integer,Q::LinQuantArray) where T
     Qmin = T(Q.min)
