@@ -20,6 +20,10 @@ for (i,file) in enumerate(filelist)
     println("Reading $varname")
     X = xr.open_dataarray(joinpath(path,file),engine="cfgrib").data
 
+    if any(X .< 0f0)
+        println("Negative entries found.")
+    end
+
     try
         Xlin = LinQuant16Array(X)
         Hlin[i] = bitentropy(Xlin)
