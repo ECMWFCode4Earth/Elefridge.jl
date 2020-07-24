@@ -8,13 +8,16 @@ Base.size(QA::LogQuantArray) = size(QA.A)
 Base.getindex(QA::LogQuantArray,i...) = getindex(QA.A,i...)
 Base.eltype(Q::LogQuantArray{T,N}) where {T,N} = T
 
-function LogQuantization(::Type{T},A::AbstractArray) where T
+function LogQuantization(   ::Type{T},
+                            A::AbstractArray,
+                            round_nearest_in::Symbol=:linspace) where T
 
     (any(A .< zero(eltype(A))) || ~all(isfinite.(A))) &&
         throw(DomainError("LogQuantization only for positive&zero entries."))
 
     # min/max of non-zero entries
-    logmin = log(Float64(nzminimum(A)))
+    mi = Float64(minpos(A))
+    logmin = log(Float64(mi))
     logmax = log(Float64(maximum(A)))
 
     # throw error in case the range is zero.
@@ -24,25 +27,40 @@ function LogQuantization(::Type{T},A::AbstractArray) where T
     # map min to 1 and max to ff..., reserve 0 for 0.
     Δ = (2^(sizeof(T)*8)-2)/(logmax-logmin)
 
+    # shift to round-to-nearest in lin or log-space
+    if round_nearest_in == :linspace
+        c = 1/2 - Δ*log(mi*(exp(1/Δ)+1)/2)
+    elseif round_nearest_in == :logspace
+        c = -logmin*Δ
+    else
+        throw(ArgumentError("Round-to-nearest either :linspace or :logspace"))
+    end
+
     # preallocate output
     Q = similar(A,T)
 
     for i in eachindex(A)
-        if iszero(A[i])
+        if iszero(A[i]) # store as 0x00...
             Q[i] = zero(T)
-        else
-            # TODO this is round-to-nearest in log-space
-            # change to round-to-nearest in lin-space
-            Q[i] = T(round((log(Float64(A[i]))-logmin)*Δ))+one(T)
+        else    # positive numbers: convert to logpacking in 0x1-0xff..
+            Q[i] = T(round(c + Δ*log(Float64(A[i]))))+one(T)
         end
     end
 
     return LogQuantArray{T,ndims(Q)}(Q,Float64(logmin),Float64(logmax))
 end
 
-LogQuant8Array(A::Array{T,N}) where {T,N} = LogQuantization(whichUInt(8),A)
-LogQuant16Array(A::Array{T,N}) where {T,N} = LogQuantization(whichUInt(16),A)
-LogQuant24Array(A::Array{T,N}) where {T,N} = LogQuantization(whichUInt(24),A)
+function LogQuant8Array(A::Array{T,N},rn::Symbol=:linspace) where {T,N}
+    LogQuantization(whichUInt(8),A,rn)
+end
+
+function LogQuant16Array(A::Array{T,N},rn::Symbol=:linspace) where {T,N}
+     LogQuantization(whichUInt(16),A,rn)
+end
+
+function LogQuant24Array(A::Array{T,N},rn::Symbol=:linspace) where {T,N}
+     LogQuantization(whichUInt(24),A,rn)
+end
 
 function Array{T}(n::Integer,Q::LogQuantArray) where T
     Qlogmin = T(Q.min)

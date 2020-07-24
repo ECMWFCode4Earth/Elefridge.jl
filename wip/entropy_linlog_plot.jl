@@ -66,8 +66,8 @@ ax.plot([n,n],[0,n],"k")
 ax.text(1,n+0.1,"maximum entropy")
 ax.fill_between([0,n,n,n+2],[n,n,0,0],[n+2,n+2,n+2,n+2],alpha=0.3)
 
-ax.set_xlabel("linear packing entropy [bit]")
-ax.set_ylabel("logarithmic packing entropy [bit]")
+ax.set_xlabel("linear quantization entropy [bit]")
+ax.set_ylabel("logarithmic quantization entropy [bit]")
 ax.set_title("$n-bit quantization entropy",loc="left")
 
 tight_layout()
