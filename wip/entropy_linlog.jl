@@ -1,9 +1,7 @@
-using Statistics, StatsBase
 using PyCall
 xr = pyimport("xarray")
 using Elefridge
 using JLD
-using BFloat16s
 
 path = "/Users/milan/cams/gridded"
 filelist = filter(x->endswith(x,".grib"),readdir(path))
@@ -23,7 +21,7 @@ for (i,file) in enumerate(filelist)
 
         if any(X .<= 0f0)
             println("Negative/zero entries found.")
-            X = X[X.>0f0]  # remove negative entries
+            X = X[X.>0f0]  # remove
         end
 
         Xlin = LinQuant16Array(X)
