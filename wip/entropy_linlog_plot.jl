@@ -50,9 +50,9 @@ ax.scatter(Hlin[sul],Hlog[sul],ms,alpha=al,"C4",label="Sulphates",marker="h")
 
 # ax.plot(Hlintheo,Hlogtheo)
 
-# for (i,varname) in enumerate(varnames)
-#     ax.text(Hlin[i],Hlog[i],varname,fontsize=8)
-# end
+for (i,varname) in enumerate(varnames)
+    ax.text(Hlin[i],Hlog[i],varname,fontsize=8)
+end
 ax.legend(loc=4,ncol=2,fontsize=9)
 
 n=16
