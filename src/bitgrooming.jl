@@ -8,6 +8,10 @@ mask32(nsb::Integer) = UInt32(2^(23-nsb)-1)
 Float64 number. `nsb` are the number of significant bits in the mantissa."""
 mask64(nsb::Integer) = UInt64(2^(52-nsb)-1)
 
+halfshavemask32(nsb::Integer) = UInt32(2^(23-nsb-1))
+halfshavemask64(nsb::Integer) = UInt32(2^(23-nsb-1))
+
+
 """Shave trailing bits of a Float32 number to zero.
 Mask is UInt32 with 1 for the shaved bits, 0 for the retained bits."""
 function shave(x::Float32,mask::UInt32)
@@ -21,6 +25,20 @@ Mask is UInt32 with 1 for the shaved bits, 0 for the retained bits."""
 function shave(x::Float64,mask::UInt64)
     ui = reinterpret(UInt64,x)
     ui &= mask
+    return reinterpret(Float64,ui)
+end
+
+function halfshave(x::Float32,mask::UInt32,hsmask::UInt32)
+    ui = reinterpret(UInt32,x)
+    ui &= mask      # set tail bits to zero
+    ui |= hsmask    # set most significant tail bit to one
+    return reinterpret(Float32,ui)
+end
+
+function halfshave(x::Float64,mask::UInt64,hsmask::UInt64)
+    ui = reinterpret(UInt64,x)
+    ui &= mask      # set tail bits to zero
+    ui |= hsmask    # set most significant tail bit to one
     return reinterpret(Float64,ui)
 end
 
