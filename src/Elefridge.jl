@@ -5,6 +5,8 @@ module Elefridge
         LogQuant8Array, LogQuant16Array, LogQuant24Array,
         bitentropy, shave, set_one, groom
 
+    export bitstring
+
 
     using StatsBase
     using BitIntegers
