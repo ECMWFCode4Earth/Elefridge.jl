@@ -17,6 +17,7 @@ module Elefridge
 
     export UInt24, UInt40, UInt48, UInt56
 
+    include("helpers.jl")
     include("nzextrema.jl")
     include("linquantarrays.jl")
     include("logquantarrays.jl")
