@@ -1,6 +1,9 @@
 using PyPlot
 using JLD
+<<<<<<< HEAD
 using Statistics
+=======
+>>>>>>> 5baed54df0982b9ab5d73d7af6a9f125ceb1e66c
 
 @load "/Users/milan/cams/error/linlogroundzfp_all.jld"
 

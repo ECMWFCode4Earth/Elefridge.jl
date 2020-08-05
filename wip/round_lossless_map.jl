@@ -13,7 +13,7 @@ X = grib.data
 lat = grib.latitude.data
 lon = grib.longitude.data
 
-for level in 5:5:137
+for level in [5:5:137]
     o3 = X[level,:,:]
     o3 = copy(o3')
 

@@ -14,17 +14,17 @@ lon = grib.longitude.data
 
 ## loop
 
-for level in 5:5:137
+for level in [85]
     o3 = X[level,:,:]
     o3 = copy(o3')
 
     ## compression
-    rbits = [14,11,9,8,5]
+    rbits = [15,12,9,8,5]
     cfs = fill(0.0,length(rbits))     # compression factors
 
     for (i,r) in enumerate(rbits)
         o3c = zfp_compress(X,precision=r)
-        cfs[i] = sizeof(X)/sizeof(o3c)
+        cfs[i] = 2*sizeof(X)/sizeof(o3c)
     end
 
     lat_div(n::Integer) = Array(-90:180/(n-1):90)
@@ -57,7 +57,7 @@ for level in 5:5:137
 
     ax1.text(0.127,0.105,"Compression\nfactor",transform=ax1.transAxes,fontweight="bold",color="white")
 
-    for (i,x) in enumerate([0.23,0.33,0.43,0.54,0.64,0.76])
+    for (i,x) in enumerate([0.23,0.33,0.43,0.54,0.64,0.74])
         c = i == 1 ? 1 : Int(round(cfs[i-1]))
         ax1.text(x,0.03,"$(c)x",transform=ax1.transAxes,fontweight="bold",fontsize=14,
                                 color="white")
@@ -67,6 +67,6 @@ for level in 5:5:137
     ax1.set_title(L"O$_3$ zfp compression",fontweight="bold")
 
     tight_layout()
-    savefig("/Users/milan/git/Elefridge.jl/maps/o3/zfp_precision3d_o3_$level.png",dpi=200)
+    savefig("/Users/milan/git/ZfpCompression.jl/figures/zfp_precision3d_o3_$level.png",dpi=200)
     close(fig)
 end
