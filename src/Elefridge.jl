@@ -26,5 +26,6 @@ module Elefridge
     include("bitgrooming.jl")
     include("bitrounding.jl")
     include("bitstring.jl")
+    include("infcontent.jl")
 
 end
