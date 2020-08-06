@@ -6,7 +6,7 @@ module Elefridge
         shave, set_one, groom
 
     export bitstring, bitentropy, bitcount, bitpaircount,
-        bitinformation
+        bitinformation, signed_exponent, signed_exponent!
 
 
     using StatsBase
@@ -25,5 +25,6 @@ module Elefridge
     include("bitentropy.jl")
     include("bitgrooming.jl")
     include("bitrounding.jl")
+    include("bitstring.jl")
 
 end
