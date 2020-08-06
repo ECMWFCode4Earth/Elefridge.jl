@@ -68,11 +68,7 @@ for (i,file) in enumerate(filelist)
     E[i,1,2:end] = statscalc(X,Xc)
     println("LinQuant24 finished.")
 
-<<<<<<< HEAD
     ## LogQuant16
-=======
-    ## LogQuant16
->>>>>>> 5baed54df0982b9ab5d73d7af6a9f125ceb1e66c
     E[i,2,1] = 32/16
     if negatives       # don't compress
         E[i,2,2:end] .= 0
@@ -82,11 +78,7 @@ for (i,file) in enumerate(filelist)
     end
     println("LogQuant16 finished.")
 
-<<<<<<< HEAD
     ## Round+lossless
-=======
-    ## Round+lossless
->>>>>>> 5baed54df0982b9ab5d73d7af6a9f125ceb1e66c
     for (j,r) in enumerate([7,5,3])
         Xc = round(X,r)         # RN16,14,12
         E[i,2+j,2:end] = statscalc(X,Xc)
@@ -99,11 +91,7 @@ for (i,file) in enumerate(filelist)
         println("RN$(r+9)+Blosc/LZ4HC finished.")
     end
 
-<<<<<<< HEAD
     ## Zfp
-=======
-    ## Zfp
->>>>>>> 5baed54df0982b9ab5d73d7af6a9f125ceb1e66c
     for (j,r) in enumerate([15,12,9])
         Xc = zfp_compress(X,precision=r)
         E[i,8+j,1] = sizeof(X)/sizeof(Xc)
