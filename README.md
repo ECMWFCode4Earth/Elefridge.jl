@@ -9,7 +9,7 @@
 Atmospheric, Oceanic and Planetary Physics, University of Oxford\
 *milan.kloewer@physics.ox.ac.uk*
 
-This repository summarises the results on [ECMWF](https://www.ecmwf.int)'s [summer of weather code](https://esowc.ecmwf.int) [challege #14: Size, precision, speed - pick two](https://github.com/esowc/challenges_2020/issues/4). For comments and changes, please raise an [issue](https://github.com/esowc/Elefridge.jl/issues) or create a pull request. The original prosal is [here](https://github.com/esowc/Elefridge.jl/blob/master/proposal.md)
+This repository summarises the results on [ECMWF](https://www.ecmwf.int)'s [summer of weather code](https://esowc.ecmwf.int) [challege #14: Size, precision, speed - pick two](https://github.com/esowc/challenges_2020/issues/4). For comments and changes, please raise an [issue](https://github.com/esowc/Elefridge.jl/issues) or create a pull request. The original prosal is [here](https://github.com/esowc/Elefridge.jl/blob/master/proposal.md).
 
 ## Abstract
 
@@ -106,3 +106,8 @@ The geometric mean of compression factors over all variables is given as horizon
 
 
 ## 6. 2-4D array floating-point compression
+
+![](https://github.com/esowc/Elefridge.jl/blob/master/maps/o3/round_o3_85.png)
+![](https://github.com/esowc/Elefridge.jl/blob/master/maps/o3/zfp_precision3d_o3_85.png)
+
+
