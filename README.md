@@ -13,10 +13,18 @@ This repository summarises the results on [ECMWF](https://www.ecmwf.int)'s [summ
 
 ## Abstract
 
+Enormous amounts of data are produced at weather forecast centres worldwide. 
+Compressing large data sets is inevitable to reduce storage requirements and can provide uncertainty estimates. 
+Current compression techniques in weather forecast centres do not exploit the spatio-temporal correlation of many geo-physical and geo-chemical variables nor do they only compress the real information contained in floating-point numbers. 
+Here, we find alternatives to the 24-bit linear quantisation compression in the Copernicus Atmospheric Monitoring (CAMS) data set and provide a perspective for climate data compression at high compression factors.
+Logarithmic quantisation was found to be better suited for the data distributions in CAMS, allowing successful compression at 16-bit per value.
+The bitwise information content is calculated, suggesting only 3-10 significant bits contain real information for most variables.
+Floating-point quantisation with round-to-nearest can consequently set random bits that do not contain information to 0, making the data set suitable for available lossless compression algorithms.
+The entire CAMS data set can be compressed into its real information with this technique by a factor of 13, relative to 32-bit floating-point numbers.
+Most lossless compression algorithms work on one-dimensional arrays, but making use of the spatial correlation across three dimensions with zfp, an overall compression factor of 26 (1.2 bit per value) for the entire dataset is achieved.
+This study provides evidence that climate and weather forecast data archives can be reduced by one to two orders of magnitude in size without losing information.
 
 ## 1. Linear and logarithmic quantisation
-
-[]
 
 ## 2. Information entropy of quantisation
 
@@ -71,6 +79,7 @@ We normalise the n-dimensional information content by `1/n` to have a the maximu
 To avoid a simulatenous bitflip of all exponent bits around 1 due to the biased-exponent formulation of floating-point numbers, we reinterpret the exponent bits in the sign-and-magnitude formulation. The first exponent bit is consequently the sign of the exponent, the only exponent bit flipping around 1. For the CAMS dataset this makes little difference as most variables are within the range [0,1).
 
 ![](https://github.com/esowc/Elefridge.jl/blob/master/plots/bitinformation_all.png)
+
 **Figure 4.** Bitwise information content for all variables in the CAMS data set encoded as Float32. 
 Bits that do not contain real information are grey-shaded. 
 The total information is the sum of the real information bits.
@@ -86,5 +95,14 @@ Some variables like CO, CO2, CH4 (including its variants ch4_c, kch4) and tempra
 The number of significant bits that contain real information can be used to inform the compression algorithm about the required precision.
 
 ## 5. Rounding combined with lossless compression
+
+
+
+![](https://github.com/esowc/Elefridge.jl/blob/master/plots/linlogroundzfp_all.png)
+
+**Figure 5.** Compression factor versus absolute and decimal error for linear and logarithmic quantisation, round+lossless and zfp compression. 
+Every circle represents the 90th percentile of the respective error norms for one variable. 
+The geometric mean of compression factors over all variables is given as horizontal lines.
+
 
 ## 6. 2-4D array floating-point compression
