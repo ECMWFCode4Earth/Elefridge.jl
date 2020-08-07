@@ -68,11 +68,22 @@ Ic_xyz(A) = Ic_x + Ic_y + Ic_z = 3H - q0 * (H0x + H0y + H0z) - q1 * (H1x + H0y +
 ```
 where the subscript `x,y,z` denotes that the array `A` was first unravelled along that dimension. 
 We normalise the n-dimensional information content by `1/n` to have a the maximum information content of 1 bit, meaning that this bit contains full information in all 3 dimensions.
+To avoid a simulatenous bitflip of all exponent bits around 1 due to the biased-exponent formulation of floating-point numbers, we reinterpret the exponent bits in the sign-and-magnitude formulation. The first exponent bit is consequently the sign of the exponent, the only exponent bit flipping around 1. For the CAMS dataset this makes little difference as most variables are within the range [0,1).
 
 ![](https://github.com/esowc/Elefridge.jl/blob/master/plots/bitinformation_all.png)
 **Figure 4.** Bitwise information content for all variables in the CAMS data set encoded as Float32. 
 Bits that do not contain real information are grey-shaded. 
 The total information is the sum of the real information bits.
+
+Most variables in the CAMS dataset do not use the sign bit, nor the sign bit of the exponent as their information is 0. 
+Exceptions are the variables derived from the wind velocities, divergence d, etadot, vorticity vo and vertical velocity w. 
+Other exponent bits usually have a high information content as they are slowly varying throughout space. 
+The information drops quickly to zero beyond the first significant bits and in most cases only the first 3-10 significant bits contain real information.
+For some variables information re-emerges for the least significant bits, which is presumably caused by some unphysical quantisation artifacts in the underlying equations.
+The total information per value, which is the sum of the information in the real information bits, rarely exceeds 7 bit.
+Some variables like CO, CO2, CH4 (including its variants ch4_c, kch4) and temprature have a high share of information stored in the significant bits.
+
+The number of significant bits that contain real information can be used to inform the compression algorithm about the required precision.
 
 ## 5. Rounding combined with lossless compression
 
