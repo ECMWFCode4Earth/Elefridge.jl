@@ -24,20 +24,12 @@ This repository summarises the results on [ECMWF](https://www.ecmwf.int)'s [summ
 
 Quantisation of floating-point numbers into a subset of floating-point numbers is achieved via rounding. Several rounding modes for floats have been proposed in the past. The IEEE-754 standard defines the round-to-nearest standard, in which a float `f` is round to the adjacent nearest quantised floats `f0` and `f1`, whichever is nearer in linear space. Special so-called tie-rules apply when `f` is exactly half-way between `f0` and `f1`, in which case the tie-to-even defines a rounding mode in which `f` gets round to the "even" (i.e. ending in a zero bit) float of `f0` and `f1`. 
 
+Alternatives to round-to-nearest have been proposed for data compression. Bit-shaving always sets the rounded bits to `0`, which effectivly rounds every `f` between `f0` and `f1` towards 0. Bit-shaving is results in a bias for data distributions that are not symmetrical around 0. Assuming a uniform distribution of floats between `f0` and `f1` yields that the expected absolute error of bit-shaving is ULP/2 where ULP (unit in the last place) is the distance between between `f0` and `f1`. In contrast, round-to-nearest introduces a rounding error that is ULP/4 in expectation, as individual absolute errors are ULP/2 at most. To reduce the bias introduced by bit-shaving, bit-grooming was proposed, which alternatingly sets the discarded bits to `0` and to `1`. The number `π` is round to 7 significant bits with the different rounding modes as
+
 ```julia
 julia> pi = Float32(π)
 3.1415927f0
 
-julia> bitstring(pi,:split)
-"0 10000000 10010010000111111011011"
-
-julia> bitstring(round(pi,7),:split)
-"0 10000000 10010010000000000000000"
-```
-
-Alternatives to round-to-nearest have been proposed for data compression. Bit-shaving always sets the rounded bits to `0`, which effectivly rounds every `f` between `f0` and `f1` towards 0. Bit-shaving is results in a bias for data distributions that are not symmetrical around 0. Assuming a uniform distribution of floats between `f0` and `f1` yields that the expected absolute error of bit-shaving is ULP/2 where ULP (unit in the last place) is the distance between between `f0` and `f1`. In contrast, round-to-nearest introduces a rounding error that is ULP/4 in expectation, as individual absolute errors are ULP/2 at most. To reduce the bias introduced by bit-shaving, bit-grooming was proposed, which alternatingly sets the discarded bits to `0` and to `1`. The number `pi = Float32(π)` is round to 7 significant bits by setting the 16 least significant bits to 0 ("bit-shaving") or to 1 ("bit-setting") or 
-
-```julia
 julia> a = [pi,round(pi,7),shave(pi,7),set_one(pi,7)]
 
 julia> bitstring.(a,:split)
@@ -47,14 +39,40 @@ julia> bitstring.(a,:split)
  "0 10000000 10010010000000000000000"    # bit-shaving
  "0 10000000 10010011111111111111111"    # bit-setting
 ```
-In this example bit-shaving and round-to-nearest yield the same result. However, bit-setting introduces an error of ~ULP.
+In this example bit-shaving and round-to-nearest yield the same result. However, bit-setting introduces an error of ~ULP. To compare the different rounding modes quantitativly, the mean, absolute and decimal error is analysed for different uniform, normal and log-normal distributions in Fig. 3.
 
 ![](https://github.com/esowc/Elefridge.jl/blob/master/plots/groom_vs_round.png)
-**Figure 3.** Mean, absolute and decimal error for different floating-point rounding modes: round-to-nearest, bit-grooming and bit-shaving. For each statistical distribution, rounding modes were applied to only retain the first 7 signficant bits. From each statistical distribution 10000 samples were drawn 10000 times, which result in the distribution of the error norms as shown. [[Creating script]](https://github.com/esowc/Elefridge.jl/blob/master/wip/groom_vs_round.jl)
+**Figure 3.** Mean, absolute and decimal error for different floating-point rounding modes: round-to-nearest, bit-grooming and bit-shaving. For each statistical distribution, rounding modes were applied to only retain the first 7 signficant bits. From each statistical distribution 10000 samples were drawn 10000 times, which result in the distribution of the error norms as shown. [[Creating script]](https://github.com/esowc/Elefridge.jl/blob/master/wip/groom_vs_round_plot.jl)
 
 The rounding mode round-to-nearest tie-to-even, as initially defined by the IEEE-754 standard, was found to perform best with respect to the error norms regarded here. We therefore do not recommend alternative rounding modes for data compression.
 
 ## 4. Bitwise information content of n-dimensional arrays
+
+The bitwise information content of a dataset has to be analysed to determine the number of bits that can be discarded in a rounding mode. For geo-physical and geo-chemical data, we expect the sign and the exponent bits to have a high real information content unless they are not used, e.g. the sign-bit does not contain information in non-negative data. The most significant bits presumably contain information as long as bits are not randomly occurring, which is assumed for the least-significant bits. We calculate the real bitwise information content for a dataset `A` based on unconditional and conditional entropies for a given bit in all values of `A`. All those bits form a bitstream `bi`, for which the information content `Ic` is calculated as
+```
+Ic(bi) = H - q0*H0 - q1*H1
+```
+with `H` being the unconditional entropy, `q0,q1` the probability of a bit being `0,1` and `H0,H1` are the conditional entropies. 
+`H0` is the entropy calculated from the conditional probabilities that a bit is `0` or `1` given that the previous bit is `0`. 
+Similarly for `H1`. 
+Although the entropy `H` is 1 for random uniformly distributed bits (i.e. p(bi=`0`) = 0.5) the conditional probabilities p(0|0), p(1|0), p(0|1), p(1|1) are 0.5 too, such that the conditional entropy is high, reducing the information content to 0. 
+In other words, knowing the state of a bit does not provide any further information to the state of the succeeding bit.
+For correlated data, in contrast, the conditional entropy reduces (as the conditional probabilities are less uniform) increasing the information content. 
+Bits with low information content are therefore either largely unused or independently distributed.
+
+The information content calculation is repeated for every bit in a floating-point number across all elements in a 1-dimensional array `A`. 
+For n-dimensional arrays, the conditional probabilities can be calculated in n directions by permuting the dimensions of `A` before unravelling into an 1-dimensional array. 
+Summing the n information contents for n-dimensional arrays is the generalisation in which a bit's information can have predictive skill in any of the n dimensions. For a 3D-array `A` with dimensions (x,y,z) the information content is
+```
+Ic_xyz(A) = Ic_x + Ic_y + Ic_z = 3H - q0 * (H0x + H0y + H0z) - q1 * (H1x + H0y + H0z) 
+```
+where the subscript `x,y,z` denotes that the array `A` was first unravelled along that dimension. 
+We normalise the n-dimensional information content by `1/n` to have a the maximum information content of 1 bit, meaning that this bit contains full information in all 3 dimensions.
+
+![](https://github.com/esowc/Elefridge.jl/blob/master/plots/bitinformation_all.png)
+**Figure 4.** Bitwise information content for all variables in the CAMS data set encoded as Float32. 
+Bits that do not contain real information are grey-shaded. 
+The total information is the sum of the real information bits.
 
 ## 5. Rounding combined with lossless compression
 
