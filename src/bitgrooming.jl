@@ -98,23 +98,38 @@ set_one(X::AbstractArray{Float64},nsb::Integer) = set_one.(X,mask64(nsb))
 
 """Bit-grooming. Alternatingly apply bit-shaving and setting to a Float32 array."""
 function groom(X::AbstractArray{Float32},nsb::Integer)
-    Y = similar(X)      # preallocate output of same size and type
-    mask1 = mask32(nsb)   # mask for setting
-    mask0 = ~mask1      # mask for shaving
+
+    Y = similar(X)          # preallocate output of same size and type
+    mask1 = mask32(nsb)     # mask for setting
+    mask0 = ~mask1          # mask for shaving
+    n = length(X)
+
+
     @inbounds for i in 1:2:length(X)-1
         Y[i] = shave(X[i],mask0)            # every second element is shaved
         Y[i+1] = set_one(X[i+1],mask1)      # every other 2nd element is set
     end
+
+    # for arrays of uneven length shave last element (as exempted from loop)
+    Y[end] = n % 2 == 1 ? shave(X[end],mask0) : Y[end]
+
     return Y
 end
 
 function groom(X::AbstractArray{Float64},nsb::Integer)
-    Y = similar(X)      # preallocate output of same size and type
-    mask1 = mask64(nsb)   # mask for setting
-    mask0 = ~mask1      # mask for shaving
-    @inbounds for i in 1:2:length(X)-1
+
+    Y = similar(X)          # preallocate output of same size and type
+    mask1 = mask64(nsb)     # mask for setting
+    mask0 = ~mask1          # mask for shaving
+    n = length(X)
+
+    @inbounds for i in 1:2:n-1
         Y[i] = shave(X[i],mask0)            # every second element is shaved
         Y[i+1] = set_one(X[i+1],mask1)      # every other 2nd element is set
     end
+
+    # for arrays of uneven length shave last element (as exempted from loop)
+    Y[end] = n % 2 == 1 ? shave(X[end],mask0) : Y[end]
+
     return Y
 end
