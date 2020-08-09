@@ -381,6 +381,37 @@ julia> bitinformation(A)
  ```
 have only zero information in the sign (unused for random uniform distribution U(0,1)), and in the first exponent bits (also unused due to limited range) and in the last significant bit (flips randomly). The information is maximised to 1bit for the last exponent and the first significant bits, as knowing the state of such a bit one can expect the next (or previous) bit to be the same due to the correlation.
 
+### Round+lossless
+
+The compression technique which involves rounding in combination with a lossless compression algorithm can be achieved as follows (using the highly correlated array `A` from previous example).
+
+```julia
+julia> using Blosc                    # Blosc library incl blosc & LZ4HC compression
+
+julia> Blosc.set_compressor("lz4hc")  # use LZ4HC
+
+julia> Ar = round(A,5);               # round A to 5 significant bits
+
+julia> Ac = compress(Ar)              # compress into UInt8 array
+18562-element Array{UInt8,1}:
+ 0x02
+ 0x01
+ 0x21
+ 0x04
+    ⋮
+
+julia> sizeof(A)/sizeof(Ac)           # compression factor
+215.49402004094387                    # very high due to unrealisitically high correlation in A
+```
+Decompression via
+```julia
+julia> Ad = decompress(Float32,Ac)
+
+julia> Ad == Ar
+true                # indeed lossless
+```
+It is recommended to round to `k` number of keepbits as informed by `bitinformation`.
+
 ### Zfp Compression
 
 Julia bindings to th [zfp compression library](https://computing.llnl.gov/projects/floating-point-compression/zfp-compression-ratio-and-quality) have been developed. This functionality is exported to a separate package: [ZfpCompression.jl](https://github.com/milankl/ZfpCompression.jl) and documentation can be found therein.
