@@ -1,3 +1,4 @@
+"""Count the occurences of the 1-bit in bit position b across all elements of A."""
 function bitcount(A::Array{T},b::Int) where {T<:Unsigned}
     N = sizeof(T)*8             # number of bits in T
     @boundscheck b <= N || throw(BoundsError("Count bit $b for $T is invalid."))
@@ -10,18 +11,23 @@ function bitcount(A::Array{T},b::Int) where {T<:Unsigned}
     return n
 end
 
+"""Count the occurences of the 1-bit in bit position b across all elements of A.
+Method for Integers & Floats via reinterpretation to unsigned integers."""
 bitcount(A::Array{T},b::Int) where {T<:Union{Signed,AbstractFloat}} =
     bitcount(reinterpret.(whichUInt(T),A),b)
 
+"""Count the occurences of the 1-bit in every bit position b across all elements of A."""
 function bitcount(A::Array{T}) where {T<:Union{Unsigned,Signed,AbstractFloat}}
-    N = 8*sizeof(T)
-    n = fill(0,N)
-    for b in 1:N
+    N = 8*sizeof(T)             # determine the size [bit] of elements in A
+    n = fill(0,N)               # preallocate counters
+    for b in 1:N                # loop over bit positions and count each
         n[b] = bitcount(A,b)
     end
     return n
 end
 
+"""Entropy [bit] for bitcount functions. Maximised to 1bit for random uniformly
+distributed bits in A."""
 function bitcountentropy(A::AbstractArray)
     N = prod(size(A))
     p = bitcount(A) / N
@@ -29,6 +35,8 @@ function bitcountentropy(A::AbstractArray)
     return e
 end
 
+"""Count pairs of bits across elements of A for bit position b therein.
+Returns a 4-element array with counts for 00,01,10,11."""
 function bitpaircount(A::Array{T},b::Int) where {T<:Unsigned}
     N = sizeof(T)*8             # number of bits in T
     @boundscheck b <= N || throw(BoundsError("Count bit $b for $T is invalid."))
@@ -49,18 +57,27 @@ function bitpaircount(A::Array{T},b::Int) where {T<:Unsigned}
     return n
 end
 
+"""Count pairs of bits across elements of A for bit position b therein.
+Method which reinterprets Integers and Floats as UInts."""
 bitpaircount(A::Array{T},b::Int) where {T<:Union{Signed,AbstractFloat}} =
     bitpaircount(reinterpret.(whichUInt(T),A),b)
 
+"""Count pairs of bits across elements of A for every bit position therein.
+Returns a 4xn-array with counts for 00,01,10,11 in rows and every bit position
+in columns."""
 function bitpaircount(A::Array{T}) where {T<:Union{Unsigned,Signed,AbstractFloat}}
     N = 8*sizeof(T)         # number of bits in T
-    n = fill(0,4,N)         # store the 4 possible pair counts for every bit
+    n = fill(0,4,N)         # store the 4 possible pair counts for every bit position
     for b in 1:N
         n[:,b] = bitpaircount(A,b)
     end
     return n
 end
 
+"""Calculates the conditional probabilities of pairs 00,01,10,11 in the bit sequences
+of array A. Returns a 4xn array with conditional probabilities p(nextbit=0|previousbit=0),
+p(1|0),p(0|1),p(1|1) in rows and every bit position in columns. Returns NaN when
+all bits are either 0,1 (in which case the conditional probability is not defined)."""
 function bitcondprobability(A::Array{T}) where {T<:Union{Unsigned,Signed,AbstractFloat}}
     N = prod(size(A[2:end]))        # elements in array (A[1] is )
     n1 = bitcount(A[1:end-1])
@@ -74,10 +91,12 @@ function bitcondprobability(A::Array{T}) where {T<:Union{Unsigned,Signed,Abstrac
     return pcond
 end
 
+"""Calculates the conditional entropy for 00,01,10,11 for every bit position across
+all elements of A."""
 function bitcpentropy(A::Array{T}) where {T<:Union{Unsigned,Signed,AbstractFloat}}
     pcond = bitcondprobability(A)
     pcond[isnan.(pcond)] .= 0
-    pcond /= 2
+    pcond /= 2      # divide by 2 as p(0|0)+p(1|0)+p(0|1)+p(1|1)=2
     e = [abs(entropy(pcond[:,i],2)) for i in 1:size(pcond)[2]]
     return e
 end
@@ -113,6 +132,19 @@ function bitinformation(A::Array{T}) where {T<:Union{Unsigned,Signed,AbstractFlo
     return I
 end
 
+"""Converts the exponent bits of Float16,Float32 or Float64-arrays from its
+conventional biased-form into a sign&magnitude representation. E.g.
+
+julia> bitstring(10f0,:split)
+"0 10000010 01000000000000000000000"
+
+julia> bitstring.(signed_exponent([10f0]),:split)[1]
+"0 00000011 01000000000000000000000"
+
+In the former the exponent 3 is interpret from 0b10000010=130 via subtraction of
+the exponent bias of Float32 = 127. In the latter the exponent is inferred from
+sign bit (0) and a magnitude represetation 2^1 + 2^1 = 3.
+"""
 function signed_exponent!(A::Array{T}) where {T<:Union{Float16,Float32,Float64}}
 
     # sign&fraction mask
@@ -135,6 +167,8 @@ function signed_exponent!(A::Array{T}) where {T<:Union{Float16,Float32,Float64}}
     end
 end
 
+"""Convert the exponent bits into a sign&magnitude representation with
+preallocation of a new array."""
 function signed_exponent(A::Array{T}) where {T<:Union{Float16,Float32,Float64}}
     B = copy(A)
     signed_exponent!(B)
