@@ -96,7 +96,117 @@ The addition of `0x1` in the quantisation is to map the minpos-maximum range to
 bitpatterns `0x000001` to `0xffffff` but to keep the `0x000000` free for encoding
 0.
 
-## 2. Information entropy of quantisation
+## 1a. Information entropy of quantisation
+
+Choosing either linear or logarithmic quantisation imposes a linear or logarithmic
+distribution of quantums on the data set. The distance between the data values
+and the nearest quantums depend on the data distribution, which in turn affects
+the overall rounding error. For a continuous data distribution, the quantisation
+should be chosen such that more quantums are in the vicinity of data values
+to minimise the distance between them.
+
+Calculating the entropy of quantisation will quantify the amount of bitpatterns
+that are effectively used by the quantisation, measured in bits, such that the
+difference between the entropy and the available bits is ideally as small as possible.
+The information entropy is defined as
+```julia
+H = - Σᵢ pᵢ * log2(pᵢ)
+```
+where `pᵢ` the chance of bitpattern `i` occurring in the quantisation. Theoretically,
+a uniform distribution achieves maximum entropy with linear quantisation
+as every bitpattern is used at the same frequency. Similarly, a log-uniform distribution
+achieves maximum entropy with logarithmic quantisation. Measuring the entropy
+of either linearly or logarithmically quantised arrays is therefore a way to
+quantify whether the underlying data is rather linearly or logarithmically distributed.
+
+![](https://github.com/esowc/Elefridge.jl/blob/master/plots/bitpattern_histogram.png)
+**Figure 1.** Bitpattern histogram for (a) 24-bit linear quantisation and
+(b) 16-bit logarithmic quantisation for NO2. The information entropy
+of quantisation is given in the top-right of each panel.
+
+The bitpattern histogram in Fig. 1a reveals that 24-bit linear quantisation of NO2 does
+not use most of the available bitpatterns. Contrarily, high occurrences for bitpatterns
+in the vicinity of `0x000000` are observed. The entropy is only about 16-bit,
+such that 8-bit are basically unused, which translates to only 2^-8=0.4% of bitpatterns
+are effectively used.
+
+In contrast, the logarithmic quantisation reveals a histogram that
+makes use of a wide range of available bitpatterns. The entropy is 15bit, such
+that effectively only 1-bit is redundant. This shows that a logarithmic distribution
+of quantums is much better suited for the variable NO2.
+
+![](https://github.com/esowc/Elefridge.jl/blob/master/plots/entropy_linlog16.png)
+**Figure 2.** Effectively used bit patterns when compressing the variables in
+CAMS via linear or logarithmic quantisation as measured by the quantisation
+entropy at 16 bit.
+
+The quantisation entropy for most variables in the CAMS data set reveals that
+almost all variables are rather logarithmically than linearly distributed (Fig. 2).
+Variables like temperature, ozone or CO2 are an exception, but still show high
+entropies for logarithmic quantisation. Consequently, no single variable in CAMS
+would significantly benefit from a linear quantisation over a logarithmic.
+
+## 1b. Error quantification
+
+Although they are related, maximising the entropy does, in general, not guarantee
+a minimisation of the rounding error. We therefore quantify the compression errors
+of linear and logarithmic quantisation with the following error norms
+
+### Normalised mean error
+
+The mean error of an array A to its quantised array Q is
+```julia
+mean error = ∑ᵢ (Aᵢ - Qᵢ)
+```
+which quantifies a rounding bias between `A` and `Q`. The mean error can be normalised
+to allow easier comparison between different data sets.
+```julia
+normalised mean error = ∑ᵢ (Aᵢ - Qᵢ) / ∑ᵢ Aᵢ
+```
+The normalisation does not change the qualitative results of comparing different
+quantisation methods `Q1,Q2,...` as the division by the mean of A is for all identical.
+
+### Normalised absolute error
+
+The normalised absolute error is
+```julia
+normalised absolute error = abs(Aᵢ - Qᵢ) / ∑ᵢ Aᵢ
+```
+which measures the average distance of values in `A` to their respective quantums `Qᵢ`.
+The normalised absolute error is an array of the same size as `A` and `Q`, such
+that its mean, for example is the L1-norm of the linear error, which is invariant under
+the addition of a constant to `A` and `Q`.
+
+### Decimal error
+
+The decimal error is a relative error, which is defined by
+```julia
+decimal error = abs(log10(Aᵢ/Qᵢ))
+```
+As with relative errors, the decimal error is invariant under multiplication
+with a constant. It is therefore not necessary to normalise the decimal error,
+as errors of different variables will be comparable by definition.
+
+### Quantisation errors in CAMS
+
+The mean, absolute and decimal error for 16 and 24-bit linear and logarithmic
+quantisation are compared for variables in the CAMS data set. As shown by the tails
+of the error distributions, logarithmic quantisation puts a much stronger bound
+on the decimal error. Linear quantisation errors, however, can reach decimal errors
+of 1 and more, meaning that the quantisation introduced an error on the order
+of the magnitude of the value. Linear quantisation puts a slightly stronger bound
+on the absolute error. The mean error is small for all quantisation methods,
+only 16-bit linear quantisation may pose an intolerable error on the mean.
+
+Comparing the quantisation for all variables, we conclude
+that logarithmic quantisation into 16-bit can replace the current 24-bit
+linear quantisation method safely, in even reduce the error for many variables.
+Due to the 16-bit word length, the entire CAMS dataset can therefore be archived
+at 67% of the current archive size.
+
+![](https://github.com/esowc/Elefridge.jl/blob/master/plots/linvslog_all.png)
+**Figure 3.** Error comparison for linear and logarithmic quantisation for variables
+in the CAMS dataset. Variables are sorted by the absolute error of LinQuant16.
 
 ## 3. Rounding modes
 
@@ -106,8 +216,8 @@ in the past. The IEEE-754 standard defines the round-to-nearest standard, in whi
 a float `f` is round to the adjacent nearest quantised floats `f0` and `f1`,
 whichever is nearer in linear space. Special so-called tie-rules apply when
 `f` is exactly half-way between `f0` and `f1`, in which case the tie-to-even
-defines a rounding mode in which `f` gets round to the "even" (i.e. ending in a zero bit)
-float of `f0` and `f1`.
+defines a rounding mode in which `f` gets round to the "even" (i.e. ending in
+a zero bit) float of `f0` and `f1`.
 
 Alternatives to round-to-nearest have been proposed for data compression.
 Bit-shaving always sets the rounded bits to `0`, which effectively rounds every
