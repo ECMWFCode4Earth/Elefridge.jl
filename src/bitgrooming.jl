@@ -48,15 +48,24 @@ and applied."""
 shave(x::Float32,nsb::Integer) = shave(x,~mask32(nsb))
 shave(x::Float64,nsb::Integer) = shave(x,~mask64(nsb))
 
+halfshave(x::Float32,nsb::Integer) = halfshave(x,~mask32(nsb),halfshavemask32(nsb))
+halfshave(x::Float64,nsb::Integer) = halfshave(x,~mask64(nsb),halfshavemask64(nsb))
+
 """Shave trailing bits of a Float32 number to zero.
 In case no `sb` argument is applied for `shave`, shave 16 bits, retain 7."""
 shave(x::Float32) = shave(x,7)
 shave(x::Float64) = shave(x,12)
 
+halfshave(x::Float32) = halfshave(x,7)
+halfshave(x::Float64) = halfshave(x,12)
+
 """Shave trailing bits of a Float32 array to zero.
 Creates the shave-mask only once and applies it to every element in `X`."""
 shave(X::AbstractArray{Float32},nsb::Integer) = shave.(X,~mask32(nsb))
 shave(X::AbstractArray{Float64},nsb::Integer) = shave.(X,~mask64(nsb))
+
+shave(X::AbstractArray{Float32},nsb::Integer) = halfshave.(X,~mask32(nsb),halfshavemask32(nsb))
+shave(X::AbstractArray{Float64},nsb::Integer) = halfshave.(X,~mask64(nsb),halfshavemask64(nsb))
 
 """Set trailing bits of a Float32 number to one.
 Provided a UInt32 mask with 1 for bits to be set to one, and 0 else."""
