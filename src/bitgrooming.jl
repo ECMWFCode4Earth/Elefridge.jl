@@ -64,8 +64,8 @@ Creates the shave-mask only once and applies it to every element in `X`."""
 shave(X::AbstractArray{Float32},nsb::Integer) = shave.(X,~mask32(nsb))
 shave(X::AbstractArray{Float64},nsb::Integer) = shave.(X,~mask64(nsb))
 
-shave(X::AbstractArray{Float32},nsb::Integer) = halfshave.(X,~mask32(nsb),halfshavemask32(nsb))
-shave(X::AbstractArray{Float64},nsb::Integer) = halfshave.(X,~mask64(nsb),halfshavemask64(nsb))
+halfshave(X::AbstractArray{Float32},nsb::Integer) = halfshave.(X,~mask32(nsb),halfshavemask32(nsb))
+halfshave(X::AbstractArray{Float64},nsb::Integer) = halfshave.(X,~mask64(nsb),halfshavemask64(nsb))
 
 """Set trailing bits of a Float32 number to one.
 Provided a UInt32 mask with 1 for bits to be set to one, and 0 else."""
