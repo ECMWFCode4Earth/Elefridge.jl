@@ -110,18 +110,16 @@ The geometric mean of compression factors over all variables is given as horizon
 ![](https://github.com/esowc/Elefridge.jl/blob/master/maps/o3/round_o3_85.png)
 ![](https://github.com/esowc/Elefridge.jl/blob/master/maps/o3/zfp_precision3d_o3_85.png)
 
-### Functionality of Elefridge.jl
+# Functionality of Elefridge.jl
 
-# Linear quantisation
+### Linear quantisation
 
 Linear quantisation of n-dimensional arrays (any number format that can be converted to `Float64` is supported, including `Float32, Float16, BFloat16`) into 8, 16 or 24 bit is achieved via
 
 ```julia
-julia> A = rand(Float32,100,100);
-
 julia> A = rand(Float32,1000);
 
-julia> LinQuant8Array(A)
+julia> L = LinQuant8Array(A)
 1000-element LinQuantArray{UInt8,1}:
  0xc2
  0x19
@@ -137,6 +135,167 @@ julia> Array(L)
  0.09858093
  0.24355145
  0.357177
- ⋮
+    ⋮
 ```
 `Array{T}()` optionally takes a type parameter `T` such that decompression to other number formats than the default `Float32` is possible (e.g. `Float64, BFloat16`).
+
+### Logarithmic quantisation
+
+In a similar way, `LogQuant8Array, LogQuant16Array, LogQuant24Array` compresses an n-dimensional array (non-negative elements only) via logarithmic quantisation.
+```julia
+julia> A = rand(Float32,100,100);
+
+julia> A[1,1] = 0;
+
+julia> L = LogQuant16Array(A)
+100×100 LogQuantArray{UInt16,2}:
+ 0x0000  0xf22d  0xfdf6  0xf3e8  0xf775  …  
+ 0xe3dc  0xfdc0  0xedb5  0xed47  0xee5b     
+ 0xde3d  0xbe58  0xb541  0xf573  0x9885     
+ 0xf38b  0xfefe  0xea2f  0xfbb6  0xf0d2     
+ 0xd0d2  0xfe1f  0xff60  0xf6cd  0xec26        
+ 0xffa6  0xe621  0xf14d  0xfb2c  0xf50c  …  
+ 0xfcb7  0xe6fb  0xf237  0xecd5  0xfb0a     
+ 0xe4ed  0xf86f  0xf83d  0xff86  0xb686     
+      ⋮                                  ⋱ 
+```
+Exception occurs for 0, which is mapped to `0x0`.
+`Ox1` to `0xff, 0xffff, 0xffffff` are then the available bitpatterns to encode the range from `minimum(A)` to `maximum(A)` logarithmically.
+Decompression as with linear quantisation via the `Array{T}()` function.
+
+### Rounding modes
+
+Elefridge.jl implements 4 rounding modes for floating-point numbers, `round` (which is round-to-nearest tie-to-even), `shave`, `halfshave`, `set_one` and `groom`. All rounding functions take an integer as the number of keepbits as a second argument and operate on scalars as well as arrays (`Float32` and `Float64` are supported).
+```julia
+julia> bitstring.(A,:split)             # bitwise representation (split in sign, exp, sig bits) of some random numbers
+5-element Array{String,1}:
+ "0 01111101 01001000111110101001000"
+ "0 01111110 01010000000101001110110"
+ "0 01111110 01011101110110001000110"
+ "0 01111101 00010101010111011100000"
+ "0 01111001 11110000000000000000101"
+
+julia> bitstring.(round(A,3),:split)
+5-element Array{String,1}:
+ "0 01111101 01000000000000000000000"
+ "0 01111110 01100000000000000000000"  # correct round-to-nearest by flipping the third significant bit
+ "0 01111110 01100000000000000000000"  # same here
+ "0 01111101 00100000000000000000000"  # and here
+ "0 01111010 00000000000000000000000"  # note how the carry bits correctly carries into the exponent
+
+julia> bitstring.(shave(A,3),:split)
+5-element Array{String,1}:
+ "0 01111101 01000000000000000000000"  # identical to round here
+ "0 01111110 01000000000000000000000"
+ "0 01111110 01000000000000000000000"
+ "0 01111101 00000000000000000000000"
+ "0 01111001 11100000000000000000000"
+
+julia> bitstring.(set_one(A,3),:split)
+5-element Array{String,1}:
+ "0 01111101 01011111111111111111111"
+ "0 01111110 01011111111111111111111"
+ "0 01111110 01011111111111111111111"
+ "0 01111101 00011111111111111111111"
+ "0 01111001 11111111111111111111111"
+
+julia> bitstring.(groom(A,3),:split)
+5-element Array{String,1}:
+ "0 01111101 01000000000000000000000"   # shave
+ "0 01111110 01011111111111111111111"   # set to one
+ "0 01111110 01000000000000000000000"   # shave
+ "0 01111101 00011111111111111111111"   # etc.
+ "0 01111001 11100000000000000000000"
+
+julia> bitstring.(halfshave(A,3),:split)
+5-element Array{String,1}:
+ "0 01111101 01010000000000000000000"   # set all discarded bits to 1000...
+ "0 01111110 01010000000000000000000"
+ "0 01111110 01010000000000000000000"
+ "0 01111101 00010000000000000000000"
+ "0 01111001 11110000000000000000000"
+```
+### Bitpattern entropy
+
+The bitpattern entropy (i.e. a measure for the effective use of a given bit-encoding/quantisation) can be calculated via the `bitentropy` function for n-dimensional arrays with types that fit into `8,16,24,32,40,48,56` or `64` bit. Unsigned integers of the respective size are automatically implemented via the [BitIntegers.jl](https://github.com/rfourquet/BitIntegers.jl) package. Consequently, all common number formats like `Float16/32/64` or even `BFloat16` or `Posit8/16/32` etc. are supported. The `bitentropy(A::Array)` function's bottleneck is the sorting function, which sorts the elements in `A` in the beginning by its corresponding bitpatterns. The entropy is by default calculated in units of bits, which can be changed with a second argument `::Real` if desired.
+```julia
+julia> A = rand(Float32,100000000);
+
+julia> bitentropy(A)
+22.938590744784577
+```
+Here, the entropy is about 23 bit, meaning that `9` bits are effectively unused.
+
+### Information content
+
+To calculate the information content of an n-dimensional array (any typ `T` is supported that can be reinterpreted as `8,16,24,32,40,48,56` or `64-bit` unsigned integer) the following functions are exported:
+
+**bitcount**. The function `bitcount(A::Array)` counts all occurences of the 1-bit in every bit-position in every element of `A`. E.g.
+
+```julia
+julia> bitstring.(A)
+5-element Array{String,1}:
+ "10001111"
+ "00010111"
+ "11101000"
+ "10100100"
+ "11101011"
+
+julia> bitcount(A)
+8-element Array{Int64,1}:
+ 4
+ 2
+ 3
+ 1
+ 3
+ 3
+ 3
+ 3
+ ```
+The first bit of elements (here: `UInt8`) in `A` are 4 times `1` and 1 times `0`, etc. In contrast, elements drawn from a uniform distribution U(0,1)
+ ```julia
+julia> A = rand(Float32,100000);
+
+julia> bitcount(A)
+32-element Array{Int64,1}:
+      0
+      0
+ 100000
+ 100000
+      ⋮
+  37411
+  25182
+      0
+```
+have never a sign bit that is `0`, but the 2nd and third exponent bit is always `1`.
+
+**bitcountentropy**. The `bitcountentropy(A::Array)` calculates the entropy of bit occurences in `A`. For random bits occuring at probabilities p(0) = 0.5, p(1) = 0.5 the entropy for every bit is maximised to 1 bit:
+```julia
+julia> A = rand(UInt8,100000);
+
+julia> Elefridge.bitcountentropy(A)
+8-element Array{Float64,1}:
+ 0.9999998727542938
+ 0.9999952725717266
+ 0.9999949724904816
+ 0.9999973408228667
+ 0.9999937649515901
+ 0.999992796900212
+ 0.9999970566115759
+ 0.9999998958374157
+ ```
+The converges to 1 for larger arrays.
+ 
+**bitpaircount**. 
+
+### Zfp Compression
+
+Julia bindings to th [zfp compression library](https://computing.llnl.gov/projects/floating-point-compression/zfp-compression-ratio-and-quality) have been developed. This functionality is exported to a separate package: [ZfpCompression.jl](https://github.com/milankl/ZfpCompression.jl) and documentation can be found therein.
+
+## Installation
+
+Not yet registered in the Julia registry, hence do
+```julia
+(@v1.5) pkg> add https://github.com/esowc/Elefridge.jl
+```
+in the package manager (access via `]`).
