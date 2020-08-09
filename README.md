@@ -110,4 +110,33 @@ The geometric mean of compression factors over all variables is given as horizon
 ![](https://github.com/esowc/Elefridge.jl/blob/master/maps/o3/round_o3_85.png)
 ![](https://github.com/esowc/Elefridge.jl/blob/master/maps/o3/zfp_precision3d_o3_85.png)
 
+### Functionality of Elefridge.jl
 
+# Linear quantisation
+
+Linear quantisation of n-dimensional arrays (any number format that can be converted to `Float64` is supported, including `Float32, Float16, BFloat16`) into 8, 16 or 24 bit is achieved via
+
+```julia
+julia> A = rand(Float32,100,100);
+
+julia> A = rand(Float32,1000);
+
+julia> LinQuant8Array(A)
+1000-element LinQuantArray{UInt8,1}:
+ 0xc2
+ 0x19
+ 0x3e
+ 0x5b
+    ⋮
+```
+and similarly with `LinQuant16Array, LinQuant24Array`. Decompression via
+```julia
+julia> Array(L)
+1000-element Array{Float32,1}:
+ 0.76074356
+ 0.09858093
+ 0.24355145
+ 0.357177
+ ⋮
+```
+`Array{T}()` optionally takes a type parameter `T` such that decompression to other number formats than the default `Float32` is possible (e.g. `Float64, BFloat16`).
