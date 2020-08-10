@@ -723,6 +723,10 @@ c_b + log_b(1+(b-1)/2) = 0.5
 So, for `b=2` we have `c_b = 0.5 + log2(1.5) ≈ -0.085`. Hence, a small number will
 be subtracted before rounding is applied to reduce the away-from-zero bias.
 
+![](https://github.com/esowc/Elefridge.jl/blob/master/plots/round_logquant.png)
+**Figure A1.** Schematic to illustrate round-to-nearest in linear vs logarithmic
+space for logarithmic number systems.
+
 We now generalise the logarithmic system, such that the distance `dlog = 1/Δ` between
 two representable numbers (i.e. quantums) is not necessarily 1 (in log-space) and
 we allow for an offset as done in the logarithmic quantisation. Let `min` be the
