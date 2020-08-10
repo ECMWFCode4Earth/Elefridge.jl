@@ -52,17 +52,18 @@ where `n` is the number of bits used for quantisation, 24 in this case. For ever
 element `a` in `A` the corresponding quantum `q` which is closest in linear space
 is calculated via
 ```julia
-q = T(round((a-Amin)*Δ))
+(1)    q = T(round((a-Amin)*Δ))
 ```
 where `round` is the round-to-nearest function for integers and `T` the conversion
-function to `UInt24` (or `UInt8, UInt16` for other choices of `n`). Consequently,
-an array of all `q` and `Amin,Amax` have to be stored to allow for decompression,
-which is obtained by reversing the conversion from `a` to `q`. Note that the rounding
-error is introduced as the `round` function can only be approximately inverted.
+function to 24-bit unsigned integers `UInt24` (or `UInt8, UInt16` for other choices
+of `n`). Consequently, an array of all `q` and `Amin,Amax` have to be stored to
+allow for decompression, which is obtained by reversing the conversion from `a`
+to `q`. Note that the rounding error is introduced as the `round` function can
+only be approximately inverted.
 
 Logarithmic quantisation distributes the quantums logarithmically, such that
 more bitpatterns are reserved for values close to the minimum and fewer close to
-the maximum in A. Logarithmic quantisation can be generalised to negative values
+the maximum in `A`. Logarithmic quantisation can be generalised to negative values
 by introducing a sign-bit, however, we limit our application here to non-negative
 values. We obtain the minimum and maximum value in `A` as follows
 ```julia
@@ -76,24 +77,23 @@ positive value. The inverse spacing `Δ` is then
 ```
 Note, that only `2^(n-1)` (and not 2^n as for linear quantisation) bitpatterns
 are used to resolve the range between minimum and maximum, as we want to reserve
-the bitpattern 0x000000 for the value 0. The corresponding quantum `q` for `a`
-`A` is then, unless `a=0` in which case `q=0x000000`,
+the bitpattern `0x000000` for zero. The corresponding quantum `q` for `a`
+`A` is then
 ```julia
-q = T(round(c + Δ*log(a)))+0x1
+(2)    q = T(round(c + Δ*log(a)))+0x1
 ```
-`c` is a constant which can be set as `-Alogmin*Δ` such that we obtain essentially
-the same compression function as for linear quantisation, except that every element
-`a` in `A` is converted to their logarithm first. However, rounding to nearest
-in logarithmic space will therefore be achieved, which is a biased rounding mode,
-that has a bias away from zero. We can correct this round-to-nearest in logarithmic
-space rounding mode with
+unless `a=0` in which case `q=0x000000`. The constant `c` can be set as `-Alogmin*Δ`
+such that we obtain essentially the same compression function as for linear quantisation,
+except that every element `a` in `A` is converted to their logarithm first. However,
+rounding to nearest in logarithmic space will therefore be achieved, which is a
+biased rounding mode, that has a bias away from zero. We can correct this
+round-to-nearest in logarithmic space rounding mode with
 ```julia
 c = 1/2 - Δ*log(minimum(A)*(exp(1/Δ)+1)/2)
 ```
-which yields round-to-nearest in linear space.
-
-The addition of `0x1` in the quantisation is to map the minpos-maximum range to
-bitpatterns `0x000001` to `0xffffff` but to keep the `0x000000` free for encoding
+which yields round-to-nearest in linear space. A derivation is given in Appendix
+A1. The addition of `0x1` in Eq. (2) maps the minpos-maximum range to
+bitpatterns `0x000001` to `0xffffff` but keeps the `0x000000` free for encoding
 0.
 
 ## 1a. Information entropy of quantisation
@@ -150,7 +150,7 @@ would significantly benefit from a linear quantisation over a logarithmic.
 
 Although they are related, maximising the entropy does, in general, not guarantee
 a minimisation of the rounding error. We therefore quantify the compression errors
-of linear and logarithmic quantisation with the following error norms
+of linear and logarithmic quantisation with the following error norms.
 
 ### Normalised mean error
 
@@ -683,9 +683,68 @@ It is recommended to round to `k` number of keepbits as informed by `bitinformat
 
 ### Zfp Compression
 
-Julia bindings to th [zfp compression library](https://computing.llnl.gov/projects/floating-point-compression/zfp-compression-ratio-and-quality) have been developed. This functionality is exported to a separate package: [ZfpCompression.jl](https://github.com/milankl/ZfpCompression.jl) and documentation can be found therein.
+Julia bindings to th [zfp compression library](https://computing.llnl.gov/projects/floating-point-compression/zfp-compression-ratio-and-quality) have been developed.
+This functionality is exported to a separate package
+[ZfpCompression.jl](https://github.com/milankl/ZfpCompression.jl) and documentation
+can be found therein.
 
-## Installation
+# Appendix
+
+### A1 Derivation of round-to-nearest in linear space
+
+A logarithmic number format, such as logarithmic quantisation as discussed here,
+but also logarithmic fixed-point numbers for example, has an equi-distant distribution
+of representable values in logarithmic space. In Eq. (2) the `round` function
+is applied after taking the logarithm, which corresponds to round-to-nearest in
+logarithmic space. For a logarithmic integer system with base `b` (i.e. only `0,b,b²,b³,...`
+are representable), for example, we have
+```julia
+log_b(1) = 0
+log_b(√b) = 0.5
+log_b(b) = 1
+log_b(√b³) = 1.5
+log_b(b²) = 2
+```
+such that `q*√b` is always halfway between two representable numbers `q,q2` in
+logarithmic space, which will be the threshold for round up or down in the `round`
+function. `q*√b` is not halfway in linear space, which is always at
+`q + (q*b - q)/2`. For simplicity we can set `q=1`, and for `b=2` we find that
+```julia
+√2 = 1.41... != 1.5 = 1 + (2-1)/2
+```
+Round-to-nearest in log-space therefore rounds the values between 1.41... and 1.5
+to 2, which will introduce an away-from-zero bias. As halfway in log-space is reached
+by multiplication with `√b`, this can be corrected to halfway in linear space
+by adding a constant `c_b` in log-space, such that conversion from halfway in linear
+space, i.e. `1+(b-1)/2` should yield halway in log-space, i.e. 0.5  
+```julia
+c_b + log_b(1+(b-1)/2) = 0.5
+```
+So, for `b=2` we have `c_b = 0.5 + log2(1.5) ≈ -0.085`. Hence, a small number will
+be subtracted before rounding is applied to reduce the away-from-zero bias.
+
+We now generalise the logarithmic system, such that the distance `dlog = 1/Δ` between
+two representable numbers (i.e. quantums) is not necessarily 1 (in log-space) and
+we allow for an offset as done in the logarithmic quantisation. Let `min` be the
+offset (i.e. the minimum of the uncompressed array) and `dlin` the spacing between
+the first two representable quantums `min,q2`. Then the logarithm of halfway in
+linear space, `log_b(min + dlin/2)`, should map to `0.5`.
+```julia
+c_b + (log_b(min + dlin/2) - log_b(min))/dlog = 0.5
+```
+With `dlin = b^(log_b(min) + dlog) - min` this can be transformed into
+```julia
+c_b = 1/2 - 1/dlog*log_b((b^dlog + 1)/2)
+```
+and combined with the offset correction `-log_b(min)*Δ` to form either
+```julia
+c = -log(min)*Δ,   (round-to-nearest in log-space)
+c = 1/2 - Δ*log(minimum(A)*(exp(1/Δ)+1)/2)    (round-to-nearest in linear-space)
+```
+with `b = ℯ`, so that only the natural logarithm has to be computed for every
+element in the uncompressed array.
+
+# Installation
 
 Not yet registered in the Julia registry, hence do
 ```julia
