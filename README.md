@@ -121,6 +121,7 @@ of either linearly or logarithmically quantised arrays is therefore a way to
 quantify whether the underlying data is rather linearly or logarithmically distributed.
 
 ![](https://github.com/esowc/Elefridge.jl/blob/master/plots/bitpattern_histogram.png)
+
 **Figure 1.** Bitpattern histogram for (a) 24-bit linear quantisation and
 (b) 16-bit logarithmic quantisation for NO2. The information entropy
 of quantisation is given in the top-right of each panel.
@@ -137,6 +138,7 @@ that effectively only 1-bit is redundant. This shows that a logarithmic distribu
 of quantums is much better suited for the variable NO2.
 
 ![](https://github.com/esowc/Elefridge.jl/blob/master/plots/entropy_linlog16.png)
+
 **Figure 2.** Effectively used bit patterns when compressing the variables in
 CAMS via linear or logarithmic quantisation as measured by the quantisation
 entropy at 16 bit.
@@ -167,7 +169,7 @@ normalised mean error = ∑ᵢ (Aᵢ - Qᵢ) / ∑ᵢ Aᵢ
 The normalisation does not change the qualitative results of comparing different
 quantisation methods `Q1,Q2,...` as the division by the mean of A is for all identical.
 
-### Normalised absolute error
+### Normalised absolute error
 
 The normalised absolute error is
 ```julia
@@ -357,13 +359,13 @@ right with increasing compression factors. Only one vertical level in the high
 troposphere (model level 85) is shown, but compression factors include all
 vertical levels.
 
-# Conclusion: A roadmap for atmospheric data compression
+# Conclusion: A roadmap for atmospheric data compression
 
 ## 1. Short-term: Logarithmic quantisation
 
 ## 2. Medium-term: Round+lossless
 
-## 3. Long-term: Zfp multi-dimensional compression
+## 3. Long-term: Zfp multi-dimensional compression
 
 
 # Functionality of Elefridge.jl
@@ -506,9 +508,9 @@ Here, the entropy is about 23 bit, meaning that `9` bits are effectively unused.
 
 ### Information content
 
-To calculate the information content of an n-dimensional array (any typ `T` is
-   supported that can be reinterpreted as `8,16,24,32,40,48,56` or `64-bit`
-   unsigned integer) the following functions are exported:
+To calculate the information content of an n-dimensional array (any typ `T` is 
+supported that can be reinterpreted as `8,16,24,32,40,48,56` or `64-bit`
+unsigned integer) the following functions are provided:
 
 **bitcount**. The function `bitcount(A::Array)` counts all occurences of the
 1-bit in every bit-position in every element of `A`. E.g.
@@ -764,6 +766,7 @@ So, for `b=2` we have `c_b = 0.5 + log2(1.5) ≈ -0.085`. Hence, a small number 
 be subtracted before rounding is applied to reduce the away-from-zero bias.
 
 ![](https://github.com/esowc/Elefridge.jl/blob/master/plots/round_logquant.png)
+
 **Figure A1.** Schematic to illustrate round-to-nearest in linear vs logarithmic
 space for logarithmic number systems.
 
