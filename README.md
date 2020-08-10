@@ -16,13 +16,13 @@ This repository summarises the results on [ECMWF](https://www.ecmwf.int)'s [summ
 Enormous amounts of data are produced at weather and climate forecast centres
 worldwide. Compressing large data sets is inevitable to reduce storage and data
 sharing requirements. Current compression techniques in forecast centres do not
-exploit the spatio-temporal correlation of many geophysical and geochemical
-variables nor do they only compress the real information contained in 32 or
-64-bit floating-point numbers. Here, we find alternatives to the default 24-bit
-linear quantisation compression in the Copernicus Atmospheric Monitoring (CAMS)
-data set and provide a perspective for climate data compression at large
-compression factors. Logarithmic quantisation was found to better match the data
-distributions in CAMS, allowing for successful compression at 16-bit per value.
+exploit the spatio-temporal correlation of many atmospheric variables nor do
+they only compress the real information contained in 32 or 64-bit floating-point
+numbers. Here, we find alternatives to the default 24-bit linear quantisation
+compression in the Copernicus Atmospheric Monitoring Service (CAMS) data set and
+provide a perspective for climate data compression at large compression factors.
+Logarithmic quantisation was found to better match the data distributions in CAMS,
+allowing for successful compression at 16-bit per value.
 The bitwise information content is calculated in the original 32-bit floating-point
 number encoding, suggesting only 3-9 significant bits contain real information
 for most variables. Floating-point quantisation can consequently set bits that
@@ -30,10 +30,11 @@ do not contain information to 0, facilitating available lossless compression
 algorithms. The entire CAMS data set can be compressed into its real information
 with this technique by a factor of 13, relative to 32-bit floating-point numbers.
 Most lossless compression algorithms work on one-dimensional arrays, but making
-use of the correlation in three spatial dimensions with zfp, an overall compression
-factor of 26 (1.2 bit per value) for the entire dataset is achieved. This study
-provides evidence that climate and weather forecast data archives can be reduced
-by one to two orders of magnitude in size without losing valuable information.
+use of the correlation in three spatial dimensions with the compression method
+zfp, an overall compression factor of 26 (1.2 bit per value) for the entire dataset
+is achieved. This study provides evidence that climate and weather forecast data
+archives can be reduced by one to two orders of magnitude in size without losing
+valuable information.
 
 ## 1. Linear and logarithmic quantisation
 
@@ -52,17 +53,18 @@ where `n` is the number of bits used for quantisation, 24 in this case. For ever
 element `a` in `A` the corresponding quantum `q` which is closest in linear space
 is calculated via
 ```julia
-q = T(round((a-Amin)*Δ))
+(1)    q = T(round((a-Amin)*Δ))
 ```
 where `round` is the round-to-nearest function for integers and `T` the conversion
-function to `UInt24` (or `UInt8, UInt16` for other choices of `n`). Consequently,
-an array of all `q` and `Amin,Amax` have to be stored to allow for decompression,
-which is obtained by reversing the conversion from `a` to `q`. Note that the rounding
-error is introduced as the `round` function can only be approximately inverted.
+function to 24-bit unsigned integers `UInt24` (or `UInt8, UInt16` for other choices
+of `n`). Consequently, an array of all `q` and `Amin,Amax` have to be stored to
+allow for decompression, which is obtained by reversing the conversion from `a`
+to `q`. Note that the rounding error is introduced as the `round` function can
+only be approximately inverted.
 
 Logarithmic quantisation distributes the quantums logarithmically, such that
 more bitpatterns are reserved for values close to the minimum and fewer close to
-the maximum in A. Logarithmic quantisation can be generalised to negative values
+the maximum in `A`. Logarithmic quantisation can be generalised to negative values
 by introducing a sign-bit, however, we limit our application here to non-negative
 values. We obtain the minimum and maximum value in `A` as follows
 ```julia
@@ -76,24 +78,23 @@ positive value. The inverse spacing `Δ` is then
 ```
 Note, that only `2^(n-1)` (and not 2^n as for linear quantisation) bitpatterns
 are used to resolve the range between minimum and maximum, as we want to reserve
-the bitpattern 0x000000 for the value 0. The corresponding quantum `q` for `a`
-`A` is then, unless `a=0` in which case `q=0x000000`,
+the bitpattern `0x000000` for zero. The corresponding quantum `q` for `a`
+`A` is then
 ```julia
-q = T(round(c + Δ*log(a)))+0x1
+(2)    q = T(round(c + Δ*log(a)))+0x1
 ```
-`c` is a constant which can be set as `-Alogmin*Δ` such that we obtain essentially
-the same compression function as for linear quantisation, except that every element
-`a` in `A` is converted to their logarithm first. However, rounding to nearest
-in logarithmic space will therefore be achieved, which is a biased rounding mode,
-that has a bias away from zero. We can correct this round-to-nearest in logarithmic
-space rounding mode with
+unless `a=0` in which case `q=0x000000`. The constant `c` can be set as `-Alogmin*Δ`
+such that we obtain essentially the same compression function as for linear quantisation,
+except that every element `a` in `A` is converted to their logarithm first. However,
+rounding to nearest in logarithmic space will therefore be achieved, which is a
+biased rounding mode, that has a bias away from zero. We can correct this
+round-to-nearest in logarithmic space rounding mode with
 ```julia
 c = 1/2 - Δ*log(minimum(A)*(exp(1/Δ)+1)/2)
 ```
-which yields round-to-nearest in linear space.
-
-The addition of `0x1` in the quantisation is to map the minpos-maximum range to
-bitpatterns `0x000001` to `0xffffff` but to keep the `0x000000` free for encoding
+which yields round-to-nearest in linear space. A derivation is given in Appendix
+A1. The addition of `0x1` in Eq. (2) maps the minpos-maximum range to
+bitpatterns `0x000001` to `0xffffff` but keeps the `0x000000` free for encoding
 0.
 
 ## 1a. Information entropy of quantisation
@@ -150,7 +151,7 @@ would significantly benefit from a linear quantisation over a logarithmic.
 
 Although they are related, maximising the entropy does, in general, not guarantee
 a minimisation of the rounding error. We therefore quantify the compression errors
-of linear and logarithmic quantisation with the following error norms
+of linear and logarithmic quantisation with the following error norms.
 
 ### Normalised mean error
 
@@ -250,49 +251,88 @@ quantitatively, the mean, absolute and decimal error is analysed for different
 uniform, normal and log-normal distributions in Fig. 3.
 
 ![](https://github.com/esowc/Elefridge.jl/blob/master/plots/groom_vs_round.png)
-**Figure 3.** Mean, absolute and decimal error for different floating-point rounding modes: round-to-nearest, bit-grooming and bit-shaving. For each statistical distribution, rounding modes were applied to only retain the first 7 significant bits. From each statistical distribution 10000 samples were drawn 10000 times, which result in the distribution of the error norms as shown. [[Creating script]](https://github.com/esowc/Elefridge.jl/blob/master/wip/groom_vs_round_plot.jl)
+**Figure 3.** Mean, absolute and decimal error for different floating-point rounding
+modes: round-to-nearest, bit-grooming and bit-shaving. For each statistical
+distribution, rounding modes were applied to only retain the first 7 significant
+bits. From each statistical distribution 10000 samples were drawn 10000 times,
+which result in the distribution of the error norms as shown.
 
-The rounding mode round-to-nearest tie-to-even, as initially defined by the IEEE-754 standard, was found to perform best with respect to the error norms regarded here. We therefore do not recommend alternative rounding modes for data compression.
+The rounding mode round-to-nearest tie-to-even, as initially defined by the
+IEEE-754 standard, was found to perform best with respect to the error norms
+regarded here. We therefore do not recommend alternative rounding modes for
+data compression.
 
 ## 4. Bitwise information content of n-dimensional arrays
 
-The bitwise information content of a dataset has to be analysed to determine the number of bits that can be discarded in a rounding mode. For geo-physical and geo-chemical data, we expect the sign and the exponent bits to have a high real information content unless they are not used, e.g. the sign-bit does not contain information in non-negative data. The most significant bits presumably contain information as long as bits are not randomly occurring, which is assumed for the least-significant bits. We calculate the real bitwise information content for a dataset `A` based on unconditional and conditional entropies for a given bit in all values of `A`. All those bits form a bitstream `bi`, for which the information content `Ic` is calculated as
+The bitwise information content of a dataset has to be analysed to determine the
+number of bits that can be discarded in a rounding mode. For atmospheric data,
+we expect the sign and the exponent bits to have a high real information content
+unless they are not used, e.g. the sign-bit does not contain information in
+non-negative data. The most significant bits presumably contain information as
+long as bits are not randomly occurring, which is assumed for the
+least-significant bits. We calculate the real bitwise information content for a
+dataset `A` based on unconditional and conditional entropies for a given bit in
+all values of `A`. All those bits form a bitstream `bi`, for which the information
+content `Ic` is calculated as
 ```
 Ic(bi) = H - q0*H0 - q1*H1
 ```
-with `H` being the unconditional entropy, `q0,q1` the probability of a bit being `0,1` and `H0,H1` are the conditional entropies.
-`H0` is the entropy calculated from the conditional probabilities that a bit is `0` or `1` given that the previous bit is `0`.
+with `H` being the unconditional entropy, `q0,q1` the probability of a bit being
+`0,1` and `H0,H1` are the conditional entropies.
+`H0` is the entropy calculated from the conditional probabilities that a bit is
+`0` or `1` given that the previous bit is `0`.
 Similarly for `H1`.
-Although the entropy `H` is 1 for random uniformly distributed bits (i.e. p(bi=`0`) = 0.5) the conditional probabilities p(0|0), p(1|0), p(0|1), p(1|1) are 0.5 too, such that the conditional entropy is high, reducing the information content to 0.
-In other words, knowing the state of a bit does not provide any further information to the state of the succeeding bit.
-For correlated data, in contrast, the conditional entropy reduces (as the conditional probabilities are less uniform) increasing the information content.
-Bits with low information content are therefore either largely unused or independently distributed.
+Although the entropy `H` is 1 for random uniformly distributed bits (i.e.
+p(bi=`0`) = 0.5) the conditional probabilities p(0|0), p(1|0), p(0|1), p(1|1)
+are 0.5 too, such that the conditional entropy is high, reducing the information
+content to 0. In other words, knowing the state of a bit does not provide any
+further information to the state of the succeeding bit. For correlated data, in
+contrast, the conditional entropy reduces (as the conditional probabilities are
+less uniform) increasing the information content. Bits with low information
+content are therefore either largely unused or independently distributed.
 
-The information content calculation is repeated for every bit in a floating-point number across all elements in a 1-dimensional array `A`.
-For n-dimensional arrays, the conditional probabilities can be calculated in n directions by permuting the dimensions of `A` before unravelling into an 1-dimensional array.
-Summing the n information contents for n-dimensional arrays is the generalisation in which a bit's information can have predictive skill in any of the n dimensions. For a 3D-array `A` with dimensions (x,y,z) the information content is
+The information content calculation is repeated for every bit in a floating-point
+number across all elements in a 1-dimensional array `A`. For n-dimensional arrays,
+the conditional probabilities can be calculated in n directions by permuting the
+dimensions of `A` before unravelling into an 1-dimensional array. Summing the n
+information contents for n-dimensional arrays is the generalisation in which a
+bit's information can have predictive skill in any of the n dimensions. For a
+3D-array `A` with dimensions (x,y,z) the information content is
 ```
 Ic_xyz(A) = Ic_x + Ic_y + Ic_z = 3H - q0 * (H0x + H0y + H0z) - q1 * (H1x + H0y + H0z)
 ```
-where the subscript `x,y,z` denotes that the array `A` was first unravelled along that dimension.
-We normalise the n-dimensional information content by `1/n` to have a the maximum information content of 1 bit, meaning that this bit contains full information in all 3 dimensions.
-To avoid a simulatenous bitflip of all exponent bits around 1 due to the biased-exponent formulation of floating-point numbers, we reinterpret the exponent bits in the sign-and-magnitude formulation. The first exponent bit is consequently the sign of the exponent, the only exponent bit flipping around 1. For the CAMS dataset this makes little difference as most variables are within the range [0,1).
+where the subscript `x,y,z` denotes that the array `A` was first unravelled along
+that dimension. We normalise the n-dimensional information content by `1/n` to
+have a the maximum information content of 1 bit, meaning that this bit contains
+full information in all 3 dimensions. To avoid a simulatenous bitflip of all
+exponent bits around 1 due to the biased-exponent formulation of floating-point
+numbers, we reinterpret the exponent bits in the sign-and-magnitude formulation.
+The first exponent bit is consequently the sign of the exponent, the only exponent
+bit flipping around 1. For the CAMS dataset this makes little difference as most
+variables are within the range [0,1).
 
 ![](https://github.com/esowc/Elefridge.jl/blob/master/plots/bitinformation_all.png)
 
-**Figure 4.** Bitwise information content for all variables in the CAMS data set encoded as Float32.
-Bits that do not contain real information are grey-shaded.
+**Figure 4.** Bitwise information content for all variables in the CAMS data set
+encoded as Float32. Bits that do not contain real information are grey-shaded.
 The total information is the sum of the real information bits.
 
-Most variables in the CAMS dataset do not use the sign bit, nor the sign bit of the exponent as their information is 0.
-Exceptions are the variables derived from the wind velocities, divergence d, etadot, vorticity vo and vertical velocity w.
-Other exponent bits usually have a high information content as they are slowly varying throughout space.
-The information drops quickly to zero beyond the first significant bits and in most cases only the first 3-10 significant bits contain real information.
-For some variables information re-emerges for the least significant bits, which is presumably caused by some unphysical quantisation artifacts in the underlying equations.
-The total information per value, which is the sum of the information in the real information bits, rarely exceeds 7 bit.
-Some variables like CO, CO2, CH4 (including its variants ch4_c, kch4) and temprature have a high share of information stored in the significant bits.
+Most variables in the CAMS dataset do not use the sign bit, nor the sign bit of
+the exponent as their information is 0. Exceptions are the variables derived
+from the wind velocities, divergence d, etadot, vorticity vo and vertical
+velocity w. Other exponent bits usually have a high information content as
+they are slowly varying throughout space. The information drops quickly to zero
+beyond the first significant bits and in most cases only the first 3-9
+significant bits contain real information. For some variables information
+re-emerges for the least significant bits, which is presumably caused by some
+unphysical quantisation artefacts in the underlying equations. The total
+information per value, which is the sum of the information in the real
+information bits, rarely exceeds 7 bit. Some variables like CO, CO2, CH4
+(including its variants ch4_c, kch4) and temperature have a high share of
+information stored in the significant bits.
 
-The number of significant bits that contain real information can be used to inform the compression algorithm about the required precision.
+The number of significant bits that contain real information can be used to
+inform the compression algorithm about the required precision.
 
 ## 5. Rounding combined with lossless compression
 
@@ -683,9 +723,72 @@ It is recommended to round to `k` number of keepbits as informed by `bitinformat
 
 ### Zfp Compression
 
-Julia bindings to th [zfp compression library](https://computing.llnl.gov/projects/floating-point-compression/zfp-compression-ratio-and-quality) have been developed. This functionality is exported to a separate package: [ZfpCompression.jl](https://github.com/milankl/ZfpCompression.jl) and documentation can be found therein.
+Julia bindings to th [zfp compression library](https://computing.llnl.gov/projects/floating-point-compression/zfp-compression-ratio-and-quality) have been developed.
+This functionality is exported to a separate package
+[ZfpCompression.jl](https://github.com/milankl/ZfpCompression.jl) and documentation
+can be found therein.
 
-## Installation
+# Appendix
+
+### A1 Derivation of round-to-nearest in linear space
+
+A logarithmic number format, such as logarithmic quantisation as discussed here,
+but also logarithmic fixed-point numbers for example, has an equi-distant distribution
+of representable values in logarithmic space. In Eq. (2) the `round` function
+is applied after taking the logarithm, which corresponds to round-to-nearest in
+logarithmic space. For a logarithmic integer system with base `b` (i.e. only `0,b,b²,b³,...`
+are representable), for example, we have
+```julia
+log_b(1) = 0
+log_b(√b) = 0.5
+log_b(b) = 1
+log_b(√b³) = 1.5
+log_b(b²) = 2
+```
+such that `q*√b` is always halfway between two representable numbers `q,q2` in
+logarithmic space, which will be the threshold for round up or down in the `round`
+function. `q*√b` is not halfway in linear space, which is always at
+`q + (q*b - q)/2`. For simplicity we can set `q=1`, and for `b=2` we find that
+```julia
+√2 = 1.41... != 1.5 = 1 + (2-1)/2
+```
+Round-to-nearest in log-space therefore rounds the values between 1.41... and 1.5
+to 2, which will introduce an away-from-zero bias. As halfway in log-space is reached
+by multiplication with `√b`, this can be corrected to halfway in linear space
+by adding a constant `c_b` in log-space, such that conversion from halfway in linear
+space, i.e. `1+(b-1)/2` should yield halway in log-space, i.e. 0.5  
+```julia
+c_b + log_b(1+(b-1)/2) = 0.5
+```
+So, for `b=2` we have `c_b = 0.5 + log2(1.5) ≈ -0.085`. Hence, a small number will
+be subtracted before rounding is applied to reduce the away-from-zero bias.
+
+![](https://github.com/esowc/Elefridge.jl/blob/master/plots/round_logquant.png)
+**Figure A1.** Schematic to illustrate round-to-nearest in linear vs logarithmic
+space for logarithmic number systems.
+
+We now generalise the logarithmic system, such that the distance `dlog = 1/Δ` between
+two representable numbers (i.e. quantums) is not necessarily 1 (in log-space) and
+we allow for an offset as done in the logarithmic quantisation. Let `min` be the
+offset (i.e. the minimum of the uncompressed array) and `dlin` the spacing between
+the first two representable quantums `min,q2`. Then the logarithm of halfway in
+linear space, `log_b(min + dlin/2)`, should map to `0.5`.
+```julia
+c_b + (log_b(min + dlin/2) - log_b(min))/dlog = 0.5
+```
+With `dlin = b^(log_b(min) + dlog) - min` this can be transformed into
+```julia
+c_b = 1/2 - 1/dlog*log_b((b^dlog + 1)/2)
+```
+and combined with the offset correction `-log_b(min)*Δ` to form either
+```julia
+c = -log(min)*Δ,   (round-to-nearest in log-space)
+c = 1/2 - Δ*log(minimum(A)*(exp(1/Δ)+1)/2)    (round-to-nearest in linear-space)
+```
+with `b = ℯ`, so that only the natural logarithm has to be computed for every
+element in the uncompressed array.
+
+# Installation
 
 Not yet registered in the Julia registry, hence do
 ```julia
