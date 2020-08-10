@@ -338,28 +338,110 @@ inform the compression algorithm about the required precision.
 
 ## 5. Rounding combined with lossless compression
 
+Floating-point quantisation with rounding has to be combined with a lossless
+compression algorithm in order to actually reduce storage. Due to many redundant
+zero bits, which have zero entropy compared to the high entropy of random bits,
+lossless algorithms can compress rounded floating-point numbers well. The most
+significant bits (sign & exponent) are usually highly correlated for atmospheric
+data, which is also beneficial for compression. Most lossless compression algorithms
+operate on bitstreams, such that any multi-dimensional array has to be unravelled
+first. We find that compression for longitudes first (i.e. along a given latitudinal
+band) yields the highest compression factors consequently for all methods.
+This can be physically explained, as due to the prevailing zonal winds most
+variables are spread predominantly in the zonal direction, resulting in higher
+correlations along a given latitudinal band.
 
+For 7 and 15 significant bits kept (which sets 16 vs 8 significant bits to `0`)
+we investigate the compression factors `sizeof(A)/sizeof(Ac)` with `A,Ac` the
+uncompressed/compressed array, of different lossless algorithms. Deflate, Blosc,
+LZ4HC and Zstd are all widely available algorithms that have different focii
+on speed / compression trade-offs. Blosc was found to be the fastest, Deflate
+the slowest, Blosc with lowest compression rates and Zstd with highest.
+
+The maximal decimal error for 7 or 15 keepbits is bound for all variables, such
+that the lossless algorithm with highest compression factors should ideally be used
+as long as the compression/decompression speed is not too low. A strong dependency
+of compressibility on the variable is observed, with typical compression factors
+between 4 and 8 for 7 keepbits, and 1.5 and 3 for 15 keepbits.
+
+![](https://github.com/esowc/Elefridge.jl/blob/master/plots/compare_all.png)
+**Figure 5.** Comparison of different lossless compression methods for either
+7 ("RoundNearest16") or 15 ("RoundNearest24") significant bits kept. Deflate,
+Blosc, LZ4HC and Zstd were all set to highest compression levels.
+
+In Fig. 5 an ideal compression method would have low errors and high compression
+factors, but linear quantisation performs rather poorly by these standards.
+Logarithmic quantisation is somewhat better, but round+lossless achieves clearly
+better results. We found that LZ4HC provides a good compromise between speed and
+compression factor, but a thorough investigation is beyond the scope of this study.
+
+Informed by the analysis of real information bits, we choose the required precision
+for every variable individually and apply LZ4HC as a lossless compression algorithm
+on top. Most variables can be compressed with factors 8-30, with a few variables
+being very compressible with factors beyond 40. The geometric mean of
+compression factors is 13, such that the entire CAMS data set can be compressed by at
+least one order of magnitude without losing valuable information. Not that an
+average compression factor of 13 relative to 32-bit means that only 2.5bits
+have to be stored on average per value, which will be mostly the bits that
+are different from one value to the next. More significant bits will be compressed
+as they tend to not change without a compression block, less signficant bits
+are set to `0` due to rounding.
+
+Both absolute error and decimal error are higher with round+lossless than with
+logarithmic quantisation, however, computing error norms relative to values
+that are largely uncertain themselves (as shown by the limited information content
+in lesser significant bits) comes with limitations too. In that sense, errors
+below a certain threshold will be largely uncertain. We therefore suggest to
+aim for reasonable error bounds instead of reducing the error as possible.
 
 ![](https://github.com/esowc/Elefridge.jl/blob/master/plots/linlogroundzfp_all.png)
 
-**Figure 5.** Compression factor versus absolute and decimal error for linear and
+**Figure 6.** Compression factor versus absolute and decimal error for linear and
 logarithmic quantisation, round+lossless and zfp compression. Every circle represents
 the 90th percentile of the respective error norms for one variable. Lossless compression
 is the LZ4HC algorithm (level 5). The geometric mean of compression factors over
 all variables is given as horizontal lines.
 
-
 ## 6. 2-4D array floating-point compression
+
+Most lossless compression algorithms work on bitstreams, i.e. one-dimensional
+arrays. However, atmospheric data from forecast centres is usually available as
+time steps of three-dimensional arrays. In general, one can think of atmospheric
+variables being correlated in four dimensions, 3 space and one time dimension. In
+case of ensemble forecasts, this spatio-temporal correlation can extend to five
+dimensions.
+
+The round+lossless cannot make use of the multi-dimensional correlation of
+atmospheric data. However, doing so would enable higher compression factors
+as many identical bits in an n-dimensional block of similar values would not
+need to be stored repeatedly.
+
+Zfp is a compression library for floating-point arrays in 1-4 dimensions, which
+aims to make use of this multi-dimensional correlation. Zfp divides an n-dimensional
+array into blocks of size 4^n and allows absolute or decimal errors to be specified
+and therefore bound in the compressed array.
+
+Comparing different levels of precision for round+lossless with zfp shows that
+zfp in general achieves about 3-4 times higher compression ratios in the case
+of ozone (Fig. 7). Round+lossless provides reasonably small errors for compression
+factors of 12, whereas zfp achieves a factor 53 at similar precision.
 
 ![](https://github.com/esowc/Elefridge.jl/blob/master/maps/o3/round_o3_85.png)
 ![](https://github.com/esowc/Elefridge.jl/blob/master/maps/o3/zfp_precision3d_o3_85.png)
-**Figure 6.** Compression of ozone (O3) at different levels of precision with
+**Figure 7.** Compression of ozone (O3) at different levels of precision with
 (a) round+lossless and (b) zfp compression. The precision decreases from left to
 right with increasing compression factors. Only one vertical level in the high
 troposphere (model level 85) is shown, but compression factors include all
 vertical levels.
 
+Applying zfp compression with precision levels as informed by the bitwise information
+contents to the entire CAMS data set, an overall compression factor of 23 is achieved.
+Some variables, such as ozone, are highly compressible, whereas many others can
+only be compressed to about 16-25x.
+
 # Conclusion: A roadmap for atmospheric data compression
+
+
 
 ## 1. Short-term: Logarithmic quantisation
 
@@ -508,7 +590,7 @@ Here, the entropy is about 23 bit, meaning that `9` bits are effectively unused.
 
 ### Information content
 
-To calculate the information content of an n-dimensional array (any typ `T` is 
+To calculate the information content of an n-dimensional array (any typ `T` is
 supported that can be reinterpreted as `8,16,24,32,40,48,56` or `64-bit`
 unsigned integer) the following functions are provided:
 
