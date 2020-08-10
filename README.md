@@ -441,14 +441,56 @@ only be compressed to about 16-25x.
 
 # Conclusion: A roadmap for atmospheric data compression
 
-
+Summarising the results, we present a roadmap for atmospheric data compression.
+Starting from the current 24-bit linear quantisation method we suggest the following
+short, medium and long-term solutions towards compressing atmospheric data
+into its real information content.
 
 ## 1. Short-term: Logarithmic quantisation
 
+As most variables in CAMS are not linearly distributed, we suggest to use a
+logarithmic quantisation instead. Error analysis has shown that 16-bit
+are sufficient, with comparable mean and absolute errors and even reduce
+decimal errors compared to 24-bit linear quantisation. This would increase
+the compression factors from currently 1.3 to 2, allowing reduce the archive
+to 67% of its current size.
+
+It is suggested to keep the `0x0` bit to encode 0, and to use round-to-nearest
+in linear space as described. To compress variables with negative values a sign
+bit can be introduced. Overall, the change from linear to logarithmic quantisation
+is small and comes with some benefits for a short-term solution.
+
 ## 2. Medium-term: Round+lossless
+
+As floating-point numbers are already logarithmically distributed, quantisation
+for floats is easier and well error-bound with the default round-to-nearest rounding
+mode. Bit-shaving, grooming or variants thereof have been found to be inferior
+to round-to-nearest in all aspects. Combining rounding with lossless compression
+algorithms was found to enable a good control on the error while achieving
+a high compression factors of 13 relative to 32 bit. The archive could be reduced
+to 10% of its current size with 24-bit linear quantisation.
+
+Bitwise information contents quantifies how many significant bits actually
+contain real information, which can be used to inform the rounding. Most variables
+have not more than 3-9 significant bits with real information.
+
+We suggest this compression method as an medium term solution, as it requires a
+revise of the data compression libraries. However, given the small sizes, both
+24-bit linear quantisation and round+lossless could be offered simultaneously
+to allow a transition from one to the other.
 
 ## 3. Long-term: Zfp multi-dimensional compression
 
+In the long-term multi-dimensional floating-point compression via zfp is highly
+advised. Offering similar control on the error as with round+lossless it is
+a highly competitive alternative that also relies on the analysis of the bitwise
+information content. We achieved an overall compression factor of 26 for the entire
+CAMS data set meaning that the archive could be reduced to 5% of its current size.
+
+This compression method is regarded as a long-term solution, as zfp is currently
+less widely available for typical atmospheric data format files such as netCDF.
+HDF5, the underlying file structure of netCDF, does support zfp such that there
+is some revision of file formats used in CAMS needed. 
 
 # Functionality of Elefridge.jl
 
