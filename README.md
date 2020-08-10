@@ -16,13 +16,13 @@ This repository summarises the results on [ECMWF](https://www.ecmwf.int)'s [summ
 Enormous amounts of data are produced at weather and climate forecast centres
 worldwide. Compressing large data sets is inevitable to reduce storage and data
 sharing requirements. Current compression techniques in forecast centres do not
-exploit the spatio-temporal correlation of many geophysical and geochemical
-variables nor do they only compress the real information contained in 32 or
-64-bit floating-point numbers. Here, we find alternatives to the default 24-bit
-linear quantisation compression in the Copernicus Atmospheric Monitoring (CAMS)
-data set and provide a perspective for climate data compression at large
-compression factors. Logarithmic quantisation was found to better match the data
-distributions in CAMS, allowing for successful compression at 16-bit per value.
+exploit the spatio-temporal correlation of many atmospheric variables nor do
+they only compress the real information contained in 32 or 64-bit floating-point
+numbers. Here, we find alternatives to the default 24-bit linear quantisation
+compression in the Copernicus Atmospheric Monitoring Service (CAMS) data set and
+provide a perspective for climate data compression at large compression factors.
+Logarithmic quantisation was found to better match the data distributions in CAMS,
+allowing for successful compression at 16-bit per value.
 The bitwise information content is calculated in the original 32-bit floating-point
 number encoding, suggesting only 3-9 significant bits contain real information
 for most variables. Floating-point quantisation can consequently set bits that
@@ -30,10 +30,11 @@ do not contain information to 0, facilitating available lossless compression
 algorithms. The entire CAMS data set can be compressed into its real information
 with this technique by a factor of 13, relative to 32-bit floating-point numbers.
 Most lossless compression algorithms work on one-dimensional arrays, but making
-use of the correlation in three spatial dimensions with zfp, an overall compression
-factor of 26 (1.2 bit per value) for the entire dataset is achieved. This study
-provides evidence that climate and weather forecast data archives can be reduced
-by one to two orders of magnitude in size without losing valuable information.
+use of the correlation in three spatial dimensions with the compression method
+zfp, an overall compression factor of 26 (1.2 bit per value) for the entire dataset
+is achieved. This study provides evidence that climate and weather forecast data
+archives can be reduced by one to two orders of magnitude in size without losing
+valuable information.
 
 ## 1. Linear and logarithmic quantisation
 
@@ -250,49 +251,88 @@ quantitatively, the mean, absolute and decimal error is analysed for different
 uniform, normal and log-normal distributions in Fig. 3.
 
 ![](https://github.com/esowc/Elefridge.jl/blob/master/plots/groom_vs_round.png)
-**Figure 3.** Mean, absolute and decimal error for different floating-point rounding modes: round-to-nearest, bit-grooming and bit-shaving. For each statistical distribution, rounding modes were applied to only retain the first 7 significant bits. From each statistical distribution 10000 samples were drawn 10000 times, which result in the distribution of the error norms as shown. [[Creating script]](https://github.com/esowc/Elefridge.jl/blob/master/wip/groom_vs_round_plot.jl)
+**Figure 3.** Mean, absolute and decimal error for different floating-point rounding
+modes: round-to-nearest, bit-grooming and bit-shaving. For each statistical
+distribution, rounding modes were applied to only retain the first 7 significant
+bits. From each statistical distribution 10000 samples were drawn 10000 times,
+which result in the distribution of the error norms as shown.
 
-The rounding mode round-to-nearest tie-to-even, as initially defined by the IEEE-754 standard, was found to perform best with respect to the error norms regarded here. We therefore do not recommend alternative rounding modes for data compression.
+The rounding mode round-to-nearest tie-to-even, as initially defined by the
+IEEE-754 standard, was found to perform best with respect to the error norms
+regarded here. We therefore do not recommend alternative rounding modes for
+data compression.
 
 ## 4. Bitwise information content of n-dimensional arrays
 
-The bitwise information content of a dataset has to be analysed to determine the number of bits that can be discarded in a rounding mode. For geo-physical and geo-chemical data, we expect the sign and the exponent bits to have a high real information content unless they are not used, e.g. the sign-bit does not contain information in non-negative data. The most significant bits presumably contain information as long as bits are not randomly occurring, which is assumed for the least-significant bits. We calculate the real bitwise information content for a dataset `A` based on unconditional and conditional entropies for a given bit in all values of `A`. All those bits form a bitstream `bi`, for which the information content `Ic` is calculated as
+The bitwise information content of a dataset has to be analysed to determine the
+number of bits that can be discarded in a rounding mode. For atmospheric data,
+we expect the sign and the exponent bits to have a high real information content
+unless they are not used, e.g. the sign-bit does not contain information in
+non-negative data. The most significant bits presumably contain information as
+long as bits are not randomly occurring, which is assumed for the
+least-significant bits. We calculate the real bitwise information content for a
+dataset `A` based on unconditional and conditional entropies for a given bit in
+all values of `A`. All those bits form a bitstream `bi`, for which the information
+content `Ic` is calculated as
 ```
 Ic(bi) = H - q0*H0 - q1*H1
 ```
-with `H` being the unconditional entropy, `q0,q1` the probability of a bit being `0,1` and `H0,H1` are the conditional entropies.
-`H0` is the entropy calculated from the conditional probabilities that a bit is `0` or `1` given that the previous bit is `0`.
+with `H` being the unconditional entropy, `q0,q1` the probability of a bit being
+`0,1` and `H0,H1` are the conditional entropies.
+`H0` is the entropy calculated from the conditional probabilities that a bit is
+`0` or `1` given that the previous bit is `0`.
 Similarly for `H1`.
-Although the entropy `H` is 1 for random uniformly distributed bits (i.e. p(bi=`0`) = 0.5) the conditional probabilities p(0|0), p(1|0), p(0|1), p(1|1) are 0.5 too, such that the conditional entropy is high, reducing the information content to 0.
-In other words, knowing the state of a bit does not provide any further information to the state of the succeeding bit.
-For correlated data, in contrast, the conditional entropy reduces (as the conditional probabilities are less uniform) increasing the information content.
-Bits with low information content are therefore either largely unused or independently distributed.
+Although the entropy `H` is 1 for random uniformly distributed bits (i.e.
+p(bi=`0`) = 0.5) the conditional probabilities p(0|0), p(1|0), p(0|1), p(1|1)
+are 0.5 too, such that the conditional entropy is high, reducing the information
+content to 0. In other words, knowing the state of a bit does not provide any
+further information to the state of the succeeding bit. For correlated data, in
+contrast, the conditional entropy reduces (as the conditional probabilities are
+less uniform) increasing the information content. Bits with low information
+content are therefore either largely unused or independently distributed.
 
-The information content calculation is repeated for every bit in a floating-point number across all elements in a 1-dimensional array `A`.
-For n-dimensional arrays, the conditional probabilities can be calculated in n directions by permuting the dimensions of `A` before unravelling into an 1-dimensional array.
-Summing the n information contents for n-dimensional arrays is the generalisation in which a bit's information can have predictive skill in any of the n dimensions. For a 3D-array `A` with dimensions (x,y,z) the information content is
+The information content calculation is repeated for every bit in a floating-point
+number across all elements in a 1-dimensional array `A`. For n-dimensional arrays,
+the conditional probabilities can be calculated in n directions by permuting the
+dimensions of `A` before unravelling into an 1-dimensional array. Summing the n
+information contents for n-dimensional arrays is the generalisation in which a
+bit's information can have predictive skill in any of the n dimensions. For a
+3D-array `A` with dimensions (x,y,z) the information content is
 ```
 Ic_xyz(A) = Ic_x + Ic_y + Ic_z = 3H - q0 * (H0x + H0y + H0z) - q1 * (H1x + H0y + H0z)
 ```
-where the subscript `x,y,z` denotes that the array `A` was first unravelled along that dimension.
-We normalise the n-dimensional information content by `1/n` to have a the maximum information content of 1 bit, meaning that this bit contains full information in all 3 dimensions.
-To avoid a simulatenous bitflip of all exponent bits around 1 due to the biased-exponent formulation of floating-point numbers, we reinterpret the exponent bits in the sign-and-magnitude formulation. The first exponent bit is consequently the sign of the exponent, the only exponent bit flipping around 1. For the CAMS dataset this makes little difference as most variables are within the range [0,1).
+where the subscript `x,y,z` denotes that the array `A` was first unravelled along
+that dimension. We normalise the n-dimensional information content by `1/n` to
+have a the maximum information content of 1 bit, meaning that this bit contains
+full information in all 3 dimensions. To avoid a simulatenous bitflip of all
+exponent bits around 1 due to the biased-exponent formulation of floating-point
+numbers, we reinterpret the exponent bits in the sign-and-magnitude formulation.
+The first exponent bit is consequently the sign of the exponent, the only exponent
+bit flipping around 1. For the CAMS dataset this makes little difference as most
+variables are within the range [0,1).
 
 ![](https://github.com/esowc/Elefridge.jl/blob/master/plots/bitinformation_all.png)
 
-**Figure 4.** Bitwise information content for all variables in the CAMS data set encoded as Float32.
-Bits that do not contain real information are grey-shaded.
+**Figure 4.** Bitwise information content for all variables in the CAMS data set
+encoded as Float32. Bits that do not contain real information are grey-shaded.
 The total information is the sum of the real information bits.
 
-Most variables in the CAMS dataset do not use the sign bit, nor the sign bit of the exponent as their information is 0.
-Exceptions are the variables derived from the wind velocities, divergence d, etadot, vorticity vo and vertical velocity w.
-Other exponent bits usually have a high information content as they are slowly varying throughout space.
-The information drops quickly to zero beyond the first significant bits and in most cases only the first 3-10 significant bits contain real information.
-For some variables information re-emerges for the least significant bits, which is presumably caused by some unphysical quantisation artifacts in the underlying equations.
-The total information per value, which is the sum of the information in the real information bits, rarely exceeds 7 bit.
-Some variables like CO, CO2, CH4 (including its variants ch4_c, kch4) and temprature have a high share of information stored in the significant bits.
+Most variables in the CAMS dataset do not use the sign bit, nor the sign bit of
+the exponent as their information is 0. Exceptions are the variables derived
+from the wind velocities, divergence d, etadot, vorticity vo and vertical
+velocity w. Other exponent bits usually have a high information content as
+they are slowly varying throughout space. The information drops quickly to zero
+beyond the first significant bits and in most cases only the first 3-9
+significant bits contain real information. For some variables information
+re-emerges for the least significant bits, which is presumably caused by some
+unphysical quantisation artefacts in the underlying equations. The total
+information per value, which is the sum of the information in the real
+information bits, rarely exceeds 7 bit. Some variables like CO, CO2, CH4
+(including its variants ch4_c, kch4) and temperature have a high share of
+information stored in the significant bits.
 
-The number of significant bits that contain real information can be used to inform the compression algorithm about the required precision.
+The number of significant bits that contain real information can be used to
+inform the compression algorithm about the required precision.
 
 ## 5. Rounding combined with lossless compression
 
