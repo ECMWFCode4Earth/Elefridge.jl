@@ -3,7 +3,7 @@ module Elefridge
     export  LinQuantArray, LogQuantArray,
         LinQuant8Array, LinQuant16Array, LinQuant24Array,
         LogQuant8Array, LogQuant16Array, LogQuant24Array,
-        shave, set_one, groom, halfshave
+        shave, set_one, groom, halfshave,minpos
 
     export bitstring, bitentropy, bitcount, bitpaircount,
         bitinformation, signed_exponent, signed_exponent!
