@@ -9,7 +9,7 @@ Float64 number. `nsb` are the number of significant bits in the mantissa."""
 mask64(nsb::Integer) = UInt64(2^(52-nsb)-1)
 
 halfshavemask32(nsb::Integer) = UInt32(2^(23-nsb-1))
-halfshavemask64(nsb::Integer) = UInt32(2^(23-nsb-1))
+halfshavemask64(nsb::Integer) = UInt64(2^(52-nsb-1))
 
 
 """Shave trailing bits of a Float32 number to zero.
