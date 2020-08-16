@@ -36,6 +36,51 @@ is achieved. This study provides evidence that climate and weather forecast data
 archives can be reduced by one to two orders of magnitude in size without losing
 valuable information.
 
+## 0. Atmospheric variables in CAMS
+
+| Name |  Abbreviation | Unit | % of 0 | % < 0 | Entropy Float32 |
+| ---- | ------------- | ---- | ----- | ---------------- | ----- |
+| **Aerosols**|
+| Aerosol large mode mixing ratio | aerlg      | ------ | ----- | ---------------- |
+| Aerosol | aermr01     | ------ | ----- | ---------------- |
+| Aerosol | aermr02     | ------ | ----- | ---------------- |
+| Aerosol | aermr03     | ------ | ----- | ---------------- |
+| Aerosol | aermr04     | ------ | ----- | ---------------- |
+| Aerosol | aermr05     | ------ | ----- | ---------------- |
+| Aerosol | aermr06     | ------ | ----- | ---------------- |
+| Aerosol | aermr07     | ------ | ----- | ---------------- |
+| Aerosol | aermr08     | ------ | ----- | ---------------- |
+| **Water species**|
+| Cloud ice water content       | ciwc | kg/kg |
+| Cloud liquid water content    | clwc | kg/kg |
+| Specific rain water content   | crwc | kg/kg |
+| Specific snow water content   | cswc | kg/kg |
+| Specific humidity             | q    | kg/kg |
+| **Methane**|
+| Methane 1                  | ch4   | kg/kg |
+| Methane 2                  | ch4_c | kg/kg |
+| Methane loss rate          | kch4  | s⁻¹   |
+| **Dynamics**|
+| Divergence                       | d     | s⁻¹    |
+| Eta-coordinate vertical velocity | etadot| s⁻¹    |
+| Relative vorticity               | vo    | s⁻¹    |
+| Vertical velocity                | w     | Pa s⁻¹ |
+| **Nitrogen oxides**|
+| Nitrogen monoxide           | no    | kg/kg |
+| Nitrogen dioxide            | no2   | kg/kg |
+| **Ozone**|
+| Ozone mass mixing ratio 1   | go3   | kg/kg |
+| Ozone mass mixing ratio 2   | o3    | kg/kg |
+| Stratospheric ozone         | o3s   | kg/kg |
+| **Others**|
+| Aldehyde                   | ald2  | kg/kg |
+| Fraction of cloud cover    | cc    |       |
+| Carbon monoxide            | co    | kg/kg |
+| Carbon dioxide             | co2   | kg/kg |
+| Sulphur dioxide            | so2   | kg/kg |
+| Temperature                | t     | K     |
+
+
 ## 1. Linear and logarithmic quantisation
 
 24-bit linear quantisation is the current default compression method for CAMS data.
