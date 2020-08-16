@@ -1,8 +1,17 @@
 using PyPlot
 using JLD
 using Printf
+using StatsBase
+using LinearAlgebra
 
-@load "/Users/milan/cams/entropy/distribution_all_gridded.jld"
+# use unstructured for most variables
+@load "/Users/milan/cams/entropy/distribution_all.jld"
+
+# however, use gridded for temperature as dataset does not seem to be correctly interpolated
+Sgrid = load("/Users/milan/cams/entropy/distribution_all_gridded.jld","S")
+
+# copy across
+S[varnames .== "t"] = Sgrid[varnames .== "t"]
 
 n = length(S)
 
@@ -56,10 +65,19 @@ for group in groups2
     global j -= 2
 end
 
+## rescale for minpos-maximum only
+Hex = fit(Histogram,rand(Float32,100),[0f0,0.5f0,1f0])
+Sn = fill(normalize(Hex,mode=:density),n)               # normalized S
+
+for (i,H) in enumerate(S)
+    Hn = normalize(H,mode=:density)                     # Just to get the type
+    Hn.weights .= H.weights / sum(H.weights[4:end-2])   # actual normlization
+    Sn[i] = Hn
+end
 
 ## plotting
 pygui(true)
-fig,(ax1,ax2) = subplots(1,2,figsize=(10,8))
+fig,(ax1,ax2) = subplots(1,2,figsize=(10,6))
 ax1.set_xscale("log")
 ax2.set_xscale("log")
 
@@ -77,12 +95,16 @@ for (ig,group) in enumerate(groups1)
     for i in group
         global yoffset = 0.01*ioffset
 
-        x = (S[i].edges[1][4:end-3] + S[i].edges[1][5:end-2])/2
-        y = yoffset .+ S[i].weights[4:end-1]
+        x = (Sn[i].edges[1][4:end-3] + Sn[i].edges[1][5:end-2])/2
+        y = yoffset .+ Sn[i].weights[4:end-2]
 
         # extend line to zero
-        x = vcat(0,S[i].edges[1][4],x,S[i].edges[1][end-2:end-1])
-        y = vcat(yoffset,yoffset,y,S[i].weights[end-1]+yoffset)
+        xprevmax = Sn[i].edges[1][end-3]       # on smaller than max
+        xmax = Sn[i].edges[1][end-2]
+        xmax1 = (3*xmax-xprevmax)/2            # just larger than max
+        xprevinf = Sn[i].edges[1][end-1]       # floatmax
+        x = vcat(0,Sn[i].edges[1][4],x,xmax,xmax1,xprevinf)
+        y = vcat(yoffset,yoffset,y,Sn[i].weights[end-1]+yoffset,yoffset,yoffset)
 
         l = length(y)
 
@@ -102,12 +124,16 @@ for (ig,group) in enumerate(groups2)
     for i in group
         global yoffset = 0.01*ioffset
 
-        x = (S[i].edges[1][4:end-3] + S[i].edges[1][5:end-2])/2
-        y = yoffset .+ S[i].weights[4:end-1]
+        x = (Sn[i].edges[1][4:end-3] + Sn[i].edges[1][5:end-2])/2
+        y = yoffset .+ Sn[i].weights[4:end-2]
 
         # extend line to zero
-        x = vcat(0,S[i].edges[1][4],x,S[i].edges[1][end-2:end-1])
-        y = vcat(yoffset,yoffset,y,S[i].weights[end-1]+yoffset)
+        xprevmax = Sn[i].edges[1][end-3]       # on smaller than max
+        xmax = Sn[i].edges[1][end-2]
+        xmax1 = (3*xmax-xprevmax)/2            # just larger than max
+        xprevinf = Sn[i].edges[1][end-1]       # floatmax
+        x = vcat(0,Sn[i].edges[1][4],x,xmax,xmax1,xprevinf)
+        y = vcat(yoffset,yoffset,y,Sn[i].weights[end-1]+yoffset,yoffset,yoffset)
 
         l = length(y)
 
@@ -119,15 +145,15 @@ for (ig,group) in enumerate(groups2)
 end
 
 ax1.set_xlim(1e-26,1e-6)
-ax1.set_ylim(-0.01,0.4)
-ax1y2.set_ylim(-0.01,0.4)
+ax1.set_ylim(-0.02,0.38)
+ax1y2.set_ylim(-0.02,0.38)
 
 ax2.set_xlim(1e-26,1e3)
-ax2.set_ylim(-0.01,0.4)
-ax2y2.set_ylim(-0.01,0.4)
+ax2.set_ylim(-0.02,0.38)
+ax2y2.set_ylim(-0.02,0.38)
 
-ytik = Array(0:0.05:0.4)
-ytikm = Array(0:0.01:0.4)
+ytik = Array(0:0.05:0.38)
+ytikm = Array(0:0.01:0.38)
 
 ax1.set_yticks(ytik)
 ax1.set_yticklabels([@sprintf("%i%%",y*100) for y in ytik])
@@ -145,5 +171,8 @@ ax2y2.set_yticklabels(ax2names)
 ax1.set_xlabel("value")
 ax2.set_xlabel("value")
 ax1.set_ylabel("frequency")
+
+ax1.set_title("Distributions of CAMS variables",loc="left")
+ax2y2.set_ylabel("variable")
 
 tight_layout()
