@@ -41,15 +41,21 @@ valuable information.
 | Name |  Abbreviation | Unit | % of 0 | % < 0 | Entropy Float32 |
 | ---- | ------------- | ---- | ----- | ---------------- | ----- |
 | **Aerosols**|
-| Aerosol large mode mixing ratio | aerlg      | ------ | ----- | ---------------- |
-| Aerosol | aermr01     | ------ | ----- | ---------------- |
-| Aerosol | aermr02     | ------ | ----- | ---------------- |
-| Aerosol | aermr03     | ------ | ----- | ---------------- |
-| Aerosol | aermr04     | ------ | ----- | ---------------- |
-| Aerosol | aermr05     | ------ | ----- | ---------------- |
-| Aerosol | aermr06     | ------ | ----- | ---------------- |
-| Aerosol | aermr07     | ------ | ----- | ---------------- |
-| Aerosol | aermr08     | ------ | ----- | ---------------- |
+| Aerosol large mode mixing ratio | aerlg      | kg/kg | 
+| Sea salt (0.03-0.5μm)           | aermr01    | kg/kg | 
+| Sea salt (0.5-5μm)              | aermr02    | kg/kg |
+| Sea salt (5-20μm)               | aermr03    | kg/kg |
+| Dust aerosol (0.03-0.55μm)      | aermr04    | kg/kg |
+| Dust aerosol (0.55-0.9μm)       | aermr05    | kg/kg |
+| Dust aerosol (0.9-20μm)         | aermr06    | kg/kg |
+| Hydrophilic organic matter      | aermr07    | kg/kg |
+| Hydrophobic organic matter      | aermr08    | kg/kg |
+| Hydrophilic black carbon        | aermr09    | kg/kg |
+| Hydrophobic black carbon        | aermr10    | kg/kg |
+| Sulphate aerosol                | aermr11    | kg/kg |
+| Nitrate fine mode               | aermr16    | kg/kg |
+| Nitrate coarse mode             | aermr17    | kg/kg |
+| Ammonium aerosol                | aermr18    | kg/kg |
 | **Water species**|
 | Cloud ice water content       | ciwc | kg/kg |
 | Cloud liquid water content    | clwc | kg/kg |
@@ -60,6 +66,20 @@ valuable information.
 | Methane 1                  | ch4   | kg/kg |
 | Methane 2                  | ch4_c | kg/kg |
 | Methane loss rate          | kch4  | s⁻¹   |
+|**Alkanes or alcohols**|
+| Ethene                     | c2h4  | kg/kg |
+| Ethanol                    | c2h5oh| kg/kg |
+| Ethane                     | c2h6  | kg/kg |
+| Propane                    | c3h8  | kg/kg |
+| Isoprene                   | c5h8  | kg/kg |
+| Methanol                   | ch3oh | kg/kg |
+| Methyl peroxide            | ch3ooh| kg/kg |
+| Hydrogen peroxide          | h2o2  | kg/kg |
+| Formaldehyde               | hcho  | kg/kg |
+| Formic acid                | hcooh | kg/kg |
+| Nitric acid                | hno3  | kg/kg |
+| Hydroperoxy radical        | ho2   | kg/kg |
+| Hydroxyl radical           | oh    | kg/kg |
 | **Dynamics**|
 | Divergence                       | d     | s⁻¹    |
 | Eta-coordinate vertical velocity | etadot| s⁻¹    |
@@ -72,6 +92,11 @@ valuable information.
 | Ozone mass mixing ratio 1   | go3   | kg/kg |
 | Ozone mass mixing ratio 2   | o3    | kg/kg |
 | Stratospheric ozone         | o3s   | kg/kg |
+| **?**|
+| Olefins                     | ole   | kg/kg |
+| Organic nitrates            | onit  | kg/kg |
+| Peroxyacetyl nitrate        | pan   | kg/kg |
+| Paraffins                   | par   | kg/kg |
 | **Others**|
 | Aldehyde                   | ald2  | kg/kg |
 | Fraction of cloud cover    | cc    |       |
