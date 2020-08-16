@@ -38,72 +38,72 @@ valuable information.
 
 ## 0. Atmospheric variables in CAMS
 
-| Name |  Abbreviation | Unit | % of 0 | % < 0 | Entropy Float32 |
-| ---- | ------------- | ---- | ----- | ---------------- | ----- |
+| Name |  Abbreviation | Unit | Zeros | <0 | Float32 entropy |
+| ---- | ------------- | ---- | ----- | ---------------- | -----:|
 | **Aerosols**|
-| Aerosol large mode mixing ratio | aerlg      | kg/kg | 
-| Sea salt (0.03-0.5μm)           | aermr01    | kg/kg | 
-| Sea salt (0.5-5μm)              | aermr02    | kg/kg |
-| Sea salt (5-20μm)               | aermr03    | kg/kg |
-| Dust aerosol (0.03-0.55μm)      | aermr04    | kg/kg |
-| Dust aerosol (0.55-0.9μm)       | aermr05    | kg/kg |
-| Dust aerosol (0.9-20μm)         | aermr06    | kg/kg |
-| Hydrophilic organic matter      | aermr07    | kg/kg |
-| Hydrophobic organic matter      | aermr08    | kg/kg |
-| Hydrophilic black carbon        | aermr09    | kg/kg |
-| Hydrophobic black carbon        | aermr10    | kg/kg |
-| Sulphate aerosol                | aermr11    | kg/kg |
-| Nitrate fine mode               | aermr16    | kg/kg |
-| Nitrate coarse mode             | aermr17    | kg/kg |
-| Ammonium aerosol                | aermr18    | kg/kg |
+| Aerosol large mode mixing ratio | aerlg      | kg/kg |  |  | 23.7 bit |
+| Sea salt (0.03-0.5μm)           | aermr01    | kg/kg |  |  | 23.0 bit |
+| Sea salt (0.5-5μm)              | aermr02    | kg/kg |  |  | 23.5 bit |
+| Sea salt (5-20μm)               | aermr03    | kg/kg |  |  | 10.2 bit |
+| Dust aerosol (0.03-0.55μm)      | aermr04    | kg/kg |  |  | 21.2 bit |
+| Dust aerosol (0.55-0.9μm)       | aermr05    | kg/kg |  |  | 21.3 bit |
+| Dust aerosol (0.9-20μm)         | aermr06    | kg/kg |  |  | 18.3 bit |
+| Hydrophilic organic matter      | aermr07    | kg/kg |  |  | 22.8 bit | 
+| Hydrophobic organic matter      | aermr08    | kg/kg |  |  |  9.1 bit |
+| Hydrophilic black carbon        | aermr09    | kg/kg |  |  | 22.0 bit |
+| Hydrophobic black carbon        | aermr10    | kg/kg |  |  |  7.6 bit |
+| Sulphate aerosol                | aermr11    | kg/kg |  |  | 24.3 bit |
+| Nitrate fine mode               | aermr16    | kg/kg |  |  | 11.1 bit |
+| Nitrate coarse mode             | aermr17    | kg/kg |  |  | 14.8 bit |
+| Ammonium aerosol                | aermr18    | kg/kg |  |  | 11.6 bit | 
 | **Water species**|
-| Cloud ice water content       | ciwc | kg/kg |
-| Cloud liquid water content    | clwc | kg/kg |
-| Specific rain water content   | crwc | kg/kg |
-| Specific snow water content   | cswc | kg/kg |
-| Specific humidity             | q    | kg/kg |
+| Cloud ice water content       | ciwc | kg/kg |  89% |       |  1.6 bit |
+| Cloud liquid water content    | clwc | kg/kg |  89% |       |  1.7 bit |
+| Specific rain water content   | crwc | kg/kg |  90% |       |  1.5 bit |
+| Specific snow water content   | cswc | kg/kg |  90% |       |  1.5 bit |
+| Specific humidity             | q    | kg/kg |      | 0.01% | 20.2 bit |
 | **Methane**|
-| Methane 1                  | ch4   | kg/kg |
-| Methane 2                  | ch4_c | kg/kg |
-| Methane loss rate          | kch4  | s⁻¹   |
+| Methane 1                  | ch4   | kg/kg |  |  | 22.0 bit |
+| Methane 2                  | ch4_c | kg/kg |  |  | 21.5 bit |
+| Methane loss rate          | kch4  | s⁻¹   |  |  | 20.7 bit |
 |**Alkanes or alcohols**|
-| Ethene                     | c2h4  | kg/kg |
-| Ethanol                    | c2h5oh| kg/kg |
-| Ethane                     | c2h6  | kg/kg |
-| Propane                    | c3h8  | kg/kg |
-| Isoprene                   | c5h8  | kg/kg |
-| Methanol                   | ch3oh | kg/kg |
-| Methyl peroxide            | ch3ooh| kg/kg |
-| Hydrogen peroxide          | h2o2  | kg/kg |
-| Formaldehyde               | hcho  | kg/kg |
-| Formic acid                | hcooh | kg/kg |
-| Nitric acid                | hno3  | kg/kg |
-| Hydroperoxy radical        | ho2   | kg/kg |
-| Hydroxyl radical           | oh    | kg/kg |
+| Ethene                     | c2h4  | kg/kg |  |  | 10.6 bit |
+| Ethanol                    | c2h5oh| kg/kg |  |  | 16.0 bit |
+| Ethane                     | c2h6  | kg/kg |  |  | 24.4 bit |
+| Propane                    | c3h8  | kg/kg |  |  | 20.0 bit |
+| Isoprene                   | c5h8  | kg/kg |  |  |  5.1 bit |
+| Methanol                   | ch3oh | kg/kg |  |  | 24.4 bit |
+| Methyl peroxide            | ch3ooh| kg/kg |  |  | 24.5 bit |
+| Hydrogen peroxide          | h2o2  | kg/kg |  |  | 23.4 bit |
+| Formaldehyde               | hcho  | kg/kg |  |  | 24.1 bit |
+| Formic acid                | hcooh | kg/kg |  |  | 18.0 bit |
+| Nitric acid                | hno3  | kg/kg |  |  | 23.6 bit |
+| Hydroperoxy radical        | ho2   | kg/kg |  |  | 22.8 bit |
+| Hydroxyl radical           | oh    | kg/kg |  |  | 21.2 bit |
 | **Dynamics**|
-| Divergence                       | d     | s⁻¹    |
-| Eta-coordinate vertical velocity | etadot| s⁻¹    |
-| Relative vorticity               | vo    | s⁻¹    |
-| Vertical velocity                | w     | Pa s⁻¹ |
+| Divergence                       | d     | s⁻¹    | 0.1% | 50% | 24.6 bit |
+| Eta-coordinate vertical velocity | etadot| s⁻¹    | 0.1% | 50% | 24.9 bit |
+| Relative vorticity               | vo    | s⁻¹    | 0.2% | 50% | 24.8 bit |
+| Vertical velocity                | w     | Pa s⁻¹ | 0.2% | 50% | 24.9 bit |
 | **Nitrogen oxides**|
-| Nitrogen monoxide           | no    | kg/kg |
-| Nitrogen dioxide            | no2   | kg/kg |
+| Nitrogen monoxide           | no    | kg/kg | | | 15.2 bit |
+| Nitrogen dioxide            | no2   | kg/kg | | | 23.4 bit |
 | **Ozone**|
-| Ozone mass mixing ratio 1   | go3   | kg/kg |
-| Ozone mass mixing ratio 2   | o3    | kg/kg |
-| Stratospheric ozone         | o3s   | kg/kg |
+| Ozone mass mixing ratio 1   | o3    | kg/kg | | | 21.3 bit |
+| Ozone mass mixing ratio 2   | go3   | kg/kg | | | 24.5 bit |
+| Stratospheric ozone         | o3s   | kg/kg | | | 24.9 bit |
 | **?**|
-| Olefins                     | ole   | kg/kg |
-| Organic nitrates            | onit  | kg/kg |
-| Peroxyacetyl nitrate        | pan   | kg/kg |
-| Paraffins                   | par   | kg/kg |
+| Olefins                     | ole   | kg/kg |  |  | 5.2 bit |
+| Organic nitrates            | onit  | kg/kg |  |  | 24.5 bit|
+| Peroxyacetyl nitrate        | pan   | kg/kg |  |  | 24.4 bit|
+| Paraffins                   | par   | kg/kg |  |  | 11.5 bit|
 | **Others**|
-| Aldehyde                   | ald2  | kg/kg |
-| Fraction of cloud cover    | cc    |       |
-| Carbon monoxide            | co    | kg/kg |
-| Carbon dioxide             | co2   | kg/kg |
-| Sulphur dioxide            | so2   | kg/kg |
-| Temperature                | t     | K     |
+| Aldehyde                   | ald2  | kg/kg |     |  | 21.9 bit |
+| Fraction of cloud cover    | cc    |     1 | 86% |  |  1.5 bit |
+| Carbon monoxide            | co    | kg/kg |     |  | 24.0 bit |
+| Carbon dioxide             | co2   | kg/kg |     |  | 18.6 bit |
+| Sulphur dioxide            | so2   | kg/kg |     |  | 17.7 bit |
+| Temperature                | t     | K     |     |  | 
 
 
 ## 1. Linear and logarithmic quantisation
