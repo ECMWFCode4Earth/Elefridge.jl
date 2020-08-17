@@ -66,7 +66,7 @@ for i in 1:nvars
     ICcsum_norm[i,:] ./= ICcsum_norm[i,end]
 end
 
-inf99 = [argmax(ICcsum_norm[i,:] .> 0.99) for i in 1:nvars]
+inf99 = [argmax(ICcsum_norm[i,:] .> 0.98) for i in 1:nvars]
 
 inf99x = copy(vec(hcat(inf99,inf99)'))
 inf99y = copy(vec(hcat(Array(0:nvars-1),Array(1:nvars))'))
