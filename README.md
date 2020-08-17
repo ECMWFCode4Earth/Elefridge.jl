@@ -65,7 +65,11 @@ are approximately symmetrically distributed around 0.
 | Nitrate fine mode               | aermr16    | kg/kg | 11.1 bit | | |
 | Nitrate coarse mode             | aermr17    | kg/kg | 14.8 bit | | |
 | Ammonium aerosol                | aermr18    | kg/kg | 11.6 bit | | |
-| **Water species**|
+| **Carbon oxides**|
+| Carbon monoxide            | co    | kg/kg | 24.0 bit |     |  |
+| Carbon dioxide             | co2   | kg/kg | 18.6 bit |     |  |
+| **Clouds & water**|
+| Fraction of cloud cover       | cc   |     1 |  1.5 bit |  86% |       |
 | Cloud ice water content       | ciwc | kg/kg |  1.6 bit |  89% |       |
 | Cloud liquid water content    | clwc | kg/kg |  1.7 bit |  89% |       |  
 | Specific rain water content   | crwc | kg/kg |  1.5 bit |  90% |       |  
@@ -89,14 +93,17 @@ are approximately symmetrically distributed around 0.
 | Nitric acid                | hno3  | kg/kg | 23.6 bit | | |
 | Hydroperoxy radical        | ho2   | kg/kg | 22.8 bit | | |
 | Hydroxyl radical           | oh    | kg/kg | 21.2 bit | | |
-| **Dynamics**|
+| Aldehyde                   | ald2  | kg/kg | 21.9 bit | | |
+| **Dynamics and temperature**|
 | Divergence                       | d     | s⁻¹    | 24.6 bit | 0.1% | 50% |
 | Eta-coordinate vertical velocity | etadot| s⁻¹    | 24.9 bit | 0.1% | 50% |
 | Relative vorticity               | vo    | s⁻¹    | 24.8 bit | 0.2% | 50% |
 | Vertical velocity                | w     | Pa s⁻¹ | 24.9 bit | 0.2% | 50% |
-| **Nitrogen oxides**|
+| Temperature                      | t     | K      | 22.3 bit |      |     |
+| **Nitrogen and sulphur oxides**|
 | Nitrogen monoxide           | no    | kg/kg | 15.2 bit | | |
 | Nitrogen dioxide            | no2   | kg/kg | 23.4 bit | | |
+| Sulphur dioxide             | so2   | kg/kg | 17.7 bit | | |
 | **Ozone**|
 | Ozone mass mixing ratio 1   | o3    | kg/kg | 21.3 bit | | |
 | Ozone mass mixing ratio 2   | go3   | kg/kg | 24.5 bit | | |
@@ -106,13 +113,6 @@ are approximately symmetrically distributed around 0.
 | Organic nitrates            | onit  | kg/kg | 24.5 bit|  |  |
 | Peroxyacetyl nitrate        | pan   | kg/kg | 24.4 bit|  |  |
 | Paraffins                   | par   | kg/kg | 11.5 bit|  |  |
-| **Others**|
-| Aldehyde                   | ald2  | kg/kg | 21.9 bit |     |  |
-| Fraction of cloud cover    | cc    |     1 |  1.5 bit | 86% |  |
-| Carbon monoxide            | co    | kg/kg | 24.0 bit |     |  |
-| Carbon dioxide             | co2   | kg/kg | 18.6 bit |     |  |
-| Sulphur dioxide            | so2   | kg/kg | 17.7 bit |     |  |
-| Temperature                | t     | K     | 22.3 bit |     |  |
 
 **Table 1**. List of atmospheric variables in CAMS with name, their abbreviation,
 the bitpattern entropy in Float32, the share of exact zero in the dataset, and
