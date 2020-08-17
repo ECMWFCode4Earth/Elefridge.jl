@@ -19,35 +19,24 @@ n = length(S)
 aero = Array(1:15)
 ozone = [35,44,45]
 methane = [25,26,41]
-dynamics = [33,34,54,55]
-clouds = [27,28,31,32,51]
+dynamics = [33,34,54,55,53]
+clouds = [22,27,28,31,32,51]
 hydro = vcat(Array(36:40),46)
-nitro = [42,43]
+nitro = [42,43,52]
 oopp = Array(47:50)
-ces = vcat(Array(17:21),[23,24])
+ces = vcat(Array(17:21),[23,24,16])
+co12 = [29,30]
 
-groups = [aero,ozone,methane,dynamics,clouds,hydro,nitro,oopp,ces]
-grouped = vcat(aero,ozone,methane,dynamics,clouds,hydro,nitro,oopp,ces)
-
-n_in_groups = n-length(grouped)
-others = fill(0,n_in_groups)
-j = 1
-for i in 1:55
-    if i in grouped
-        0
-    else
-        global others[j] = i
-        global j+= 1
-    end
-end
+grouped = vcat(aero,co12,clouds,methane,ces,hydro,dynamics,nitro,ozone,oopp)
+groups = [aero,co12,clouds,methane,ces,hydro,dynamics,nitro,ozone,oopp]
 
 ax1names = fill("",55)
 ax2names = fill("",55)
 
-groups1 = [aero,nitro,hydro,ces]
-groups2 = [dynamics,methane,clouds,oopp,ozone,others]
+groups1 = [aero,hydro,ces]
+groups2 = [dynamics,clouds,nitro,oopp,ozone,co12,methane]
 
-j = 36
+j = 33
 for group in groups1
     for i in group
         global ax1names[j] = varnames[i]
@@ -56,13 +45,13 @@ for group in groups1
     global j -= 2
 end
 
-j = 35
+j = 32
 for group in groups2
     for i in group
         global ax2names[j] = varnames[i]
         global j -= 1
     end
-    global j -= 2
+    global j -= 1
 end
 
 ## rescale for minpos-maximum only
@@ -84,9 +73,9 @@ ax2.set_xscale("log")
 ax1y2 = ax1.twinx()
 ax2y2 = ax2.twinx()
 
-groups1colors = ["C4","indianred","C9","C8"]
-groups2colors = ["C2","C1","royalblue","C5","C6","darkslategray"]
-ioffset = 35
+groups1colors = ["C4","C1","C9"]
+groups2colors = ["C2","royalblue","indianred","C5","C6","C8","darkslategray"]
+ioffset = 32
 
 for (ig,group) in enumerate(groups1)
 
@@ -115,7 +104,7 @@ for (ig,group) in enumerate(groups1)
     global ioffset -= 2
 end
 
-ioffset = 34
+ioffset = 31
 
 for (ig,group) in enumerate(groups2)
 
@@ -141,19 +130,19 @@ for (ig,group) in enumerate(groups2)
         ax2.fill_between(x,y,fill(yoffset,l),color=color,alpha=0.3)
         global ioffset -= 1
     end
-    global ioffset -= 2
+    global ioffset -= 1
 end
 
 ax1.set_xlim(1e-26,1e-6)
-ax1.set_ylim(-0.02,0.38)
-ax1y2.set_ylim(-0.02,0.38)
+ax1.set_ylim(-0.02,0.35)
+ax1y2.set_ylim(-0.02,0.35)
 
 ax2.set_xlim(1e-26,1e3)
-ax2.set_ylim(-0.02,0.38)
-ax2y2.set_ylim(-0.02,0.38)
+ax2.set_ylim(-0.02,0.35)
+ax2y2.set_ylim(-0.02,0.35)
 
-ytik = Array(0:0.05:0.38)
-ytikm = Array(0:0.01:0.38)
+ytik = Array(0:0.05:0.35)
+ytikm = Array(0:0.01:0.35)
 
 ax1.set_yticks(ytik)
 ax1.set_yticklabels([@sprintf("%i%%",y*100) for y in ytik])
@@ -170,9 +159,9 @@ ax2y2.set_yticklabels(ax2names)
 
 ax1.set_xlabel("value")
 ax2.set_xlabel("value")
-ax1.set_ylabel("frequency")
+# ax1.set_ylabel("frequency")
 
-ax1.set_title("Distributions of CAMS variables",loc="left")
+ax1.set_title("Histograms of CAMS variables",loc="left")
 ax2y2.set_ylabel("variable")
 
 tight_layout()

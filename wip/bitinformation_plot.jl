@@ -4,16 +4,41 @@ using Statistics, StatsBase
 using ColorSchemes
 using Printf
 
-@load "/Users/milan/cams/entropy/information_all.jld"
+@load "/Users/milan/cams/entropy/information_all_unstructured.jld"
+ICgridded = load("/Users/milan/cams/entropy/information_all.jld","IC")
+
+# normalize
+IC = mean(IC,dims=2)[:,1,:]
+ICgridded = mean(ICgridded,dims=2)[:,1,:]
+
+IC[varnames.=="t",:] .= ICgridded[varnames.=="t",:]
 
 varnames[varnames .== "c"] .= "ch4_c"
 
 nvars = length(varnames)
 
-# sum over 3 dimensions
-# normalise such that max entropy = 1
-ICsum = sum(IC,dims=2)[:,1,:]/3
+## sort into groups
+aero = Array(1:15)
+ozone = [35,44,45]
+methane = [25,26,41]
+dynamics = [33,34,54,55,53]
+clouds = [22,27,28,31,32,51]
+hydro = vcat(Array(36:40),46)
+nitro = [42,43,52]
+oopp = Array(47:50)
+ces = vcat(Array(17:21),[23,24,16])
+co12 = [29,30]
 
+grouped = vcat(aero,co12,clouds,methane,ces,hydro,dynamics,nitro,ozone,oopp)
+groups = [aero,co12,clouds,methane,ces,hydro,dynamics,nitro,ozone,oopp]
+
+# sort
+varnames = varnames[grouped]
+IC = IC[grouped,:]
+
+## sum over 3 dimensions
+# normalise such that max entropy = 1
+ICsum = copy(IC)
 ICsumnan = copy(ICsum)
 ICsumnan[iszero.(ICsumnan)] .= NaN
 
@@ -41,7 +66,7 @@ for i in 1:nvars
     ICcsum_norm[i,:] ./= ICcsum_norm[i,end]
 end
 
-inf99 = [argmax(ICcsum_norm[i,:] .> 0.98) for i in 1:nvars]
+inf99 = [argmax(ICcsum_norm[i,:] .> 0.99) for i in 1:nvars]
 
 inf99x = copy(vec(hcat(inf99,inf99)'))
 inf99y = copy(vec(hcat(Array(0:nvars-1),Array(1:nvars))'))
@@ -64,7 +89,7 @@ cmap_array[1,:] = [1,1,1,1]
 
 pcm = ax1.pcolormesh(ICsumnan,vmin=0,vmax=1;cmap)
 cbar = colorbar(pcm,cax=cax,orientation="horizontal")
-cbar.set_label("[bit]")
+cbar.set_label("information content [bit]")
 
 # useful bit ranges
 ax1.plot(inf99,Array(0:nvars-1),"C1",ds="steps-pre",zorder=10)
@@ -75,8 +100,13 @@ ax1.fill_betweenx([-1,-1],[-1,-1],[-1,-1],color="w",edgecolor="k",label="unused 
 # grey shading
 ax1.fill_betweenx(inf99y,inf99x,fill(32,length(inf99x)),alpha=0.5,color="grey",label="noise / false information")
 
-ax1.axvline(1,color="k",lw=1)
-ax1.axvline(9,color="k",lw=1)
+ax1.axvline(1,color="k",lw=1,zorder=3)
+ax1.axvline(9,color="k",lw=1,zorder=3)
+
+for (ig,group) in enumerate(groups)
+    y = sum([length(g) for g in groups[1:ig]])
+    ax1.axhline(y,color="w",lw=1.5,zorder=2)
+end
 
 ax1.set_title("Bitwise information content",loc="left",fontweight="bold")
 
@@ -101,7 +131,7 @@ ax1.text(0,nvars+2,"sign",rotation=90)
 ax1.text(2,nvars+1.2,"exponent")
 ax1.text(10,nvars+1.2,"significant bits")
 
-ax1.legend(loc=4)
+ax1.legend(loc=(0.64,0.21))
 
-savefig("/Users/milan/git/Elefridge.jl/plots/bitinformation_all.png")
+savefig("/Users/milan/git/Elefridge.jl/plots/bitinformation_all.png",dpi=100)
 close(fig)
