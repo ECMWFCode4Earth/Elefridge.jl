@@ -522,13 +522,12 @@ zfp in general achieves about 3-4 times higher compression ratios in the case
 of ozone (Fig. 7). Round+lossless provides reasonably small errors for compression
 factors of 12, whereas zfp achieves a factor 53 at similar precision.
 
-![](https://github.com/esowc/Elefridge.jl/blob/master/maps/o3/round_o3_85.png)
-![](https://github.com/esowc/Elefridge.jl/blob/master/maps/o3/zfp_precision3d_o3_85.png)
+![](https://github.com/esowc/Elefridge.jl/blob/master/maps/zfp_lossless_o3_85.png)
 **Figure 8.** Compression of ozone (O3) at different levels of precision with
-(a) round+lossless and (b) zfp compression. The precision decreases from left to
-right with increasing compression factors. Only one vertical level in the high
-troposphere (model level 85) is shown, but compression factors include all
-vertical levels.
+(a) round+lossless and (b) zfp compression. The retained 23,7,5,3,1,0 significant bits
+corresponds to retaining 100%, 99.9%, 99%, 95%, 82% and 71% of real information, respectively. 
+Only one vertical level in the high troposphere (model level 85) is shown, but compression
+factors include all vertical levels.
 
 Applying zfp compression with precision levels as informed by the bitwise information
 contents to the entire CAMS data set, an overall compression factor of 23 is achieved.
