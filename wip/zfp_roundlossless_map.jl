@@ -5,8 +5,12 @@ using PyCall
 using Blosc
 using ColorSchemes
 using StatsBase, Statistics
+using TranscodingStreams, CodecZstd
 xr = pyimport("xarray")
 ccrs = pyimport("cartopy.crs")
+
+ZstdCompressorL5 = ZstdCompressor(level=5)
+TranscodingStreams.initialize(ZstdCompressorL5)
 
 path = "/Users/milan/cams/gridded/"
 filelist = filter(x->endswith(x,"_go3.grib"),readdir(path))
@@ -26,10 +30,12 @@ decerr_ll = fill(0.0,length(rbits_ll))
 Blosc.set_compressor("lz4hc")
 
 for (i,r) in enumerate(rbits_ll)
-    o3r = round(X,r)
-    o3c = compress(bittranspose(o3r))
+    o3r = bittranspose(round(X,r))
+    o3r8 = unsafe_wrap(Array, Ptr{UInt8}(pointer(o3r)), sizeof(o3r))
+    o3c = transcode(ZstdCompressorL5,o3r8)
+    # o3c = compress(bittranspose(o3r))
     cfs_ll[i] = sizeof(X)/sizeof(o3c)
-    decerr_ll[i] = median(vec(abs.(log10.(abs.(X./o3r)))))
+    # decerr_ll[i] = maximum(vec(abs.(log2.(abs.(X./o3r)))))
 end
 
 ## compression zfp
@@ -44,7 +50,7 @@ for (i,r) in enumerate(rbits_zfp[2:end])
     local o3c = zfp_compress(X,precision=r)
     cfs_zfp[i+1] = sizeof(X)/sizeof(o3c)
     local o3r = zfp_decompress(o3c)
-    decerr_zfp[i+1] = median(vec(abs.(log10.(abs.(X./o3r)))))
+    decerr_zfp[i+1] = median(vec(abs.(log2.(abs.(X./o3r)))))
 end
 
 lat_div(n::Integer) = Array(-90:180/(n-1):90)
