@@ -27,7 +27,7 @@ Blosc.set_compressor("lz4hc")
 
 for (i,r) in enumerate(rbits_ll)
     o3r = round(X,r)
-    o3c = compress(o3r)
+    o3c = compress(bittranspose(o3r))
     cfs_ll[i] = sizeof(X)/sizeof(o3c)
     decerr_ll[i] = median(vec(abs.(log10.(abs.(X./o3r)))))
 end
