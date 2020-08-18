@@ -68,14 +68,15 @@ end
 
 inf99 = [argmax(ICcsum_norm[i,:] .> 0.98) for i in 1:nvars]
 
+# @save "/Users/milan/cams/entropy/keepbits_99.jld" inf99 varnames
+
 inf99x = copy(vec(hcat(inf99,inf99)'))
 inf99y = copy(vec(hcat(Array(0:nvars-1),Array(1:nvars))'))
-
 ## plotting
 ioff()
 fig,ax1 = subplots(1,1,figsize=(8,10),sharey=true)
 ax1.invert_yaxis()
-tight_layout(rect=[0.05,0.08,0.93,0.98])
+tight_layout(rect=[0.06,0.08,0.93,0.98])
 pos = ax1.get_position()
 cax = fig.add_axes([pos.x0,0.06,pos.x1-pos.x0,0.02])
 
@@ -119,6 +120,7 @@ ax1right.set_yticks(Array(1:nvars).-0.5)
 ax1.set_yticklabels(varnames)
 ax1right.set_yticklabels([@sprintf "%4.1f" i for i in ICcsum[:,end]])
 ax1right.set_ylabel("information per value [bit]")
+ax1.set_ylabel("variable")
 
 ax1.text(inf99[1]+0.1,0.8,"$(inf99[1]-9) significant bits",fontsize=8,color="k")
 for i in 2:nvars

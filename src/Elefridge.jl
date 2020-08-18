@@ -3,10 +3,11 @@ module Elefridge
     export  LinQuantArray, LogQuantArray,
         LinQuant8Array, LinQuant16Array, LinQuant24Array,
         LogQuant8Array, LogQuant16Array, LogQuant24Array,
-        shave, set_one, groom, halfshave,minpos
+        shave, set_one, groom, halfshave, minpos
 
     export bitstring, bitentropy, bitcount, bitpaircount,
-        bitinformation, signed_exponent, signed_exponent!
+        bitinformation, signed_exponent, signed_exponent!,
+        bittranspose
 
 
     using StatsBase
@@ -27,5 +28,6 @@ module Elefridge
     include("bitrounding.jl")
     include("bitstring.jl")
     include("infcontent.jl")
+    include("bittranspose.jl")
 
 end
