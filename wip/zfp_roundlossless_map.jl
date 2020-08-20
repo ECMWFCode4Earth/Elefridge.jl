@@ -5,12 +5,15 @@ using PyCall
 using Blosc
 using ColorSchemes
 using StatsBase, Statistics
-using TranscodingStreams, CodecZstd
+# using TranscodingStreams, CodecZstd
 xr = pyimport("xarray")
 ccrs = pyimport("cartopy.crs")
 
-ZstdCompressorL5 = ZstdCompressor(level=5)
-TranscodingStreams.initialize(ZstdCompressorL5)
+# ZstdCompressorL5 = ZstdCompressor(level=5)
+# TranscodingStreams.initialize(ZstdCompressorL5)
+
+# ZstdCompressorL22 = ZstdCompressor(level=22)
+# TranscodingStreams.initialize(ZstdCompressorL22)
 
 path = "/Users/milan/cams/gridded/"
 filelist = filter(x->endswith(x,"_go3.grib"),readdir(path))
@@ -20,37 +23,41 @@ lat = grib.latitude.data
 lon = grib.longitude.data
 
 level = 85
-o3 = X[level,:,:]
-o3 = copy(o3')      # transpose to have longitude first (better compression)
+X = permutedims(X,[3,2,1])      # for lossless longitude first
+o3 = X[:,:,level]
 
-## compression round + LZ4HC
+## compression round + LZ4HC/Zstd
 rbits_ll = [23,7,5,3,1,0]
 cfs_ll = fill(0.0,length(rbits_ll))     # compression factors
 decerr_ll = fill(0.0,length(rbits_ll))
 Blosc.set_compressor("lz4hc")
 
 for (i,r) in enumerate(rbits_ll)
-    o3r = bittranspose(round(X,r))
-    o3r8 = unsafe_wrap(Array, Ptr{UInt8}(pointer(o3r)), sizeof(o3r))
-    o3c = transcode(ZstdCompressorL5,o3r8)
-    # o3c = compress(bittranspose(o3r))
-    cfs_ll[i] = sizeof(X)/sizeof(o3c)
+    Xr = round(X,r)
+    # Xr8 = unsafe_wrap(Array, Ptr{UInt8}(pointer(Xr)), sizeof(Xr))
+    # Xc = transcode(ZstdCompressorL5,Xr8)
+    Xc = compress(Xr,level=9)
+    cfs_ll[i] = sizeof(X)/sizeof(Xc)
     # decerr_ll[i] = maximum(vec(abs.(log2.(abs.(X./o3r)))))
 end
 
 ## compression zfp
+# X = permutedims(X,[3,2,1])      # for zfp vert x lat x lon
 rbits_zfp = [23,13,10,8,5,4]               # corresponds to the sigbits from above
 cfs_zfp = fill(0.0,length(rbits_zfp))     # compression factors
-decerr_zfp = fill(0.0,length(rbits_zfp))   # decimal error
+# decerr_zfp = fill(0.0,length(rbits_zfp))   # decimal error
+
+O3plot = fill(0f0,length(rbits_zfp)-1,size(o3)...)
 
 # zfp lossless
 cfs_zfp[1] = sizeof(X)/sizeof(zfp_compress(X))
 
 for (i,r) in enumerate(rbits_zfp[2:end])
-    local o3c = zfp_compress(X,precision=r)
-    cfs_zfp[i+1] = sizeof(X)/sizeof(o3c)
-    local o3r = zfp_decompress(o3c)
-    decerr_zfp[i+1] = median(vec(abs.(log2.(abs.(X./o3r)))))
+    Xc = zfp_compress(X,precision=r)
+    cfs_zfp[i+1] = sizeof(X)/sizeof(Xc)
+    O3plot[i,:,:] = zfp_decompress(Xc)[level,:,:]'
+    # local o3r = zfp_decompress(o3c)
+    # decerr_zfp[i+1] = median(vec(abs.(log2.(abs.(X./o3r)))))
 end
 
 lat_div(n::Integer) = Array(-90:180/(n-1):90)
@@ -89,8 +96,7 @@ end
 # zfp
 for i in 3:length(lond)
     lonwhere = (lon .<= lond[i]) .& (lon .> lond[i-1]-0.5)
-    o3c = zfp_decompress(zfp_compress(o3,precision=rbits_zfp[i-1]))
-    ax1.pcolormesh(lon[lonwhere],lat,o3c[lonwhere,:]',
+    ax1.pcolormesh(lon[lonwhere],lat,O3plot[i-2,lonwhere,:]',
         vmin=vmin,vmax=vmax,transform=ccrs.PlateCarree(),cmap=cmap)
 end
 
@@ -103,7 +109,17 @@ for longi in lond[2:end-1]
 end
 
 ax0.text(0.02,0.02,"Compression\n               factor",transform=ax0.transAxes,fontsize=8)
-ax0.text(0.02,0.92,"         Significant\nbits retained",transform=ax0.transAxes,fontsize=8)
+ax0.text(0.02,0.93,"         Significant\nbits retained",transform=ax0.transAxes,fontsize=8)
+ax0.text(0.88,0.87,"Real information\n       preserved",transform=ax0.transAxes,fontsize=8)
+
+info_preserved = ["100%","99.9%","98%","95%","82%","71%"]
+
+for (i,x) in enumerate([0.16,0.28,0.41,0.54,0.65,0.77])
+    ax0.text(x,0.89,info_preserved[i],transform=ax0.transAxes,fontweight="bold",
+                fontsize=10,color="white")
+    ax1.text(x,0.89,info_preserved[i],transform=ax1.transAxes,fontweight="bold",
+                fontsize=10,color="white")
+end
 
 for (i,x) in enumerate([0.23,0.33,0.43,0.53,0.63,0.74])
     c = Int(round(cfs_ll[i]))
@@ -125,6 +141,6 @@ ax0.set_title("a",fontweight="bold",loc="right")
 ax1.set_title(L"O$_3$ zfp compression")
 ax1.set_title("b",fontweight="bold",loc="right")
 
-tight_layout(rect=[0.0,0.08,1,1])
+tight_layout(rect=[0.02,0.08,1,1])
 savefig("/Users/milan/git/Elefridge.jl/maps/zfp_lossless_o3_$level.png",dpi=300)
 close(fig)
