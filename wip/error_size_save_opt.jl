@@ -5,6 +5,13 @@ using Blosc
 using Elefridge
 using JLD
 using ZfpCompression
+using TranscodingStreams, CodecZstd
+
+
+ZstdCompressorL22 = ZstdCompressor(level=22)
+
+TranscodingStreams.initialize(DeflateCompressorL9)
+TranscodingStreams.initialize(ZstdCompressorL22)
 
 path = "/Users/milan/cams/gridded"
 filelist = filter(x->endswith(x,".grib"),readdir(path))
