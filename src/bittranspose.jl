@@ -1,23 +1,30 @@
-function bittranspose(A::Array{T,1}) where {T<:Unsigned}
+const DEFAULT_BLOCKSIZE=2^14
 
-    nbits = sizeof(eltype(A))*8
+function bittranspose!( ::Type{UIntT},				# UInt equiv to T
+						At::AbstractArray{T},		# transposed array
+						A::AbstractArray{T};		# original array
+						blocksize::Int=DEFAULT_BLOCKSIZE) where {UIntT<:Unsigned,T}
+
+	@boundscheck size(A) == size(At) || throw("Input arrays must be of same size.")
+	@boundscheck sizeof(UIntT) == sizeof(T) || throw("Array elements do not match in bitsize.")
+
+    nbits = sizeof(T)*8
     N = length(A)
 
-    B = fill(zero(T),N)                 	# preallocate
-    n_in_block = 2^10                  		# values per block
-    nblocks = (N-1) ÷ n_in_block + 1		# number of blocks
+    # At .= zero(T)                 	    # make sure output array is zero
+    nblocks = (N-1) ÷ blocksize + 1			# number of blocks
 
     for nb in 1:nblocks
 
-        lastindex = min(nb*n_in_block,N)
+        lastindex = min(nb*blocksize,N)
 
-        Ablock = view(A,(nb-1)*n_in_block+1:lastindex)
-        Bblock = view(B,(nb-1)*n_in_block+1:lastindex)
+        Ablock = view(A,(nb-1)*blocksize+1:lastindex)
+        Atblock = view(At,(nb-1)*blocksize+1:lastindex)
 
         i = 0   # counter for transposed bits
         for bi in 1:nbits
             # mask to extract bit bi in each element of A
-            mask = one(T) << (nbits-bi)
+            mask = one(UIntT) << (nbits-bi)
 
 			# walk through elements in A first, then change bit-position
 			# this comes with disadvantage that A has to be read nbits-times
@@ -25,81 +32,88 @@ function bittranspose(A::Array{T,1}) where {T<:Unsigned}
 			# read first, and so on.
 
             for (ia,a) in enumerate(Ablock)
+				ui = reinterpret(UIntT,a)
                 # mask non-bi bits and
                 # (1) shift by nbits-bi >> to the right, either 0x0 or 0x1
                 # (2) shift by (nbits-1) - (i % nbits) << to the left
                 # combined this is: >> ((i % nbits)-bi+1)
-                bit = (a & mask) >> ((i % nbits)-bi+1)
+                bit = (ui & mask) >> ((i % nbits)-bi+1)
 
                 # the first nbits elements go into same b in B, then next b
-                @inbounds Bblock[(i ÷ nbits) + 1] |= bit
+				idx = (i ÷ nbits) + 1
+				@inbounds atui = reinterpret(UIntT,Atblock[idx])
+                @inbounds Atblock[idx] = reinterpret(T,atui | bit)
                 i += 1
             end
         end
     end
 
-    return B
+    return At
 end
 
-# function bittranspose(::Type{T},A::Array{T2,1}) where {T<:Unsigned,T2<:AbstractFloat}
-#     B = reinterpret.(T,A)
-#     At = bittranspose(A_asUInt)
-#     At = unsafe_wrap(Array, Ptr{T2}(pointer(At)), sizeof(At))
-#     return At
-# end
+function bittranspose(A::AbstractArray{T};kwargs...) where T
+	UIntT = whichUInt(T)
+	At = fill(reinterpret(T,zero(UIntT)),size(A))
+	bittranspose!(UIntT,At,A;kwargs...)
+	return At
+end
 
-bittranspose(A::Array{Float16,1}) = reinterpret.(Float16,bittranspose(reinterpret.(UInt16,A)))
-bittranspose(A::Array{Float32,1}) = reinterpret.(Float32,bittranspose(reinterpret.(UInt32,A)))
-bittranspose(A::Array{Float64,1}) = reinterpret.(Float64,bittranspose(reinterpret.(UInt64,A)))
+function bitbacktranspose!(	::Type{UIntT},				# UInt equiv to T
+							A::AbstractArray{T},		# backtransposed output
+							At::AbstractArray{T};		# transposed input
+							blocksize::Int=DEFAULT_BLOCKSIZE) where {UIntT<:Unsigned,T}
 
-bittranspose(A::AbstractArray) where {T,N} = reshape(bittranspose(vec(A)),size(A))
+	@boundscheck size(A) == size(At) || throw("Input arrays must be of same size.")
+	@boundscheck sizeof(UIntT) == sizeof(T) || throw("Array elements do not match in bitsize.")
 
-function bitbacktranspose(A::Array{T,1}) where {T<:Unsigned}
+    nbits = sizeof(T)*8
+    N = length(At)
 
-    nbits = sizeof(eltype(A))*8
-    N = length(A)
-
-    B = fill(zero(T),N)                 # preallocate
-    n_in_block = 2^10                  	# values per block
-    nblocks = (N-1) ÷ n_in_block + 1	# number of blocks
+    # A .= zero(T)                 	    # make sure output array is zero
+    nblocks = (N-1) ÷ blocksize + 1		# number of blocks
 
     for nb in 1:nblocks
 
-        lastindex = min(nb*n_in_block,N)
+        lastindex = min(nb*blocksize,N)
 
-        Ablock = view(A,(nb-1)*n_in_block+1:lastindex)
-        Bblock = view(B,(nb-1)*n_in_block+1:lastindex)
+        Ablock = view(A,(nb-1)*blocksize+1:lastindex)
+        Atblock = view(At,(nb-1)*blocksize+1:lastindex)
 
-		nelements = length(Bblock)	# = n_in_block except for the last
+		nelements = length(Atblock)	# = blocksize except for the last
 									# block where usually smaller
 
         i = 0   # counter for transposed bits
-		for (ia,a) in enumerate(Ablock)
+		for (ia,a) in enumerate(Atblock)
+			ui = reinterpret(UIntT,a)
+
         	for bi in 1:nbits
             	# mask to extract bit bi in each element of A
-            	mask = one(T) << (nbits-bi)
+            	mask = one(UIntT) << (nbits-bi)
 
                 # mask non-bi bits and
                 # (1) shift by nbits-bi >> to the right, either 0x0 or 0x1
                 # (2) shift by (nbits-1) - (i ÷ nblockfloat) << to the left
-                # combined this is: >> ((i % nbits)-bi+1)
-                bit = (a & mask) >> ((i ÷ nelements)-bi+1)
+                # combined this is: >> ((i ÷ nbits)-bi+1)
+                bit = (ui & mask) >> ((i ÷ nelements)-bi+1)
 
-                # the first nbits elements go into same b in B, then next b
-                @inbounds Bblock[(i % nelements) + 1] |= bit
+                # the first nbits elements go into same a in A, then next a
+				idx = (i % nelements) + 1
+				@inbounds aui = reinterpret(UIntT,Ablock[idx])
+				@inbounds Ablock[idx] = reinterpret(T,aui | bit)
                 i += 1
             end
         end
     end
 
-    return B
+    return A
 end
 
-bitbacktranspose(A::Array{Float16,1}) = reinterpret.(Float16,bitbacktranspose(reinterpret.(UInt16,A)))
-bitbacktranspose(A::Array{Float32,1}) = reinterpret.(Float32,bitbacktranspose(reinterpret.(UInt32,A)))
-bitbacktranspose(A::Array{Float64,1}) = reinterpret.(Float64,bitbacktranspose(reinterpret.(UInt64,A)))
-
-bitbacktranspose(A::AbstractArray) where {T,N} = reshape(bitbacktranspose(vec(A)),size(A))
+function bitbacktranspose(At::AbstractArray{T};kwargs...) where T
+	UIntT = whichUInt(T)
+	A = fill(reinterpret(T,zero(UIntT)),size(At))
+	bitbacktranspose!(UIntT,A,At;kwargs...)
+	return A
+end
 
 # function Base.BitMatrix(A::Array{T,1}) where T
 # 	isbitstype(eltype(A)) || error("Only bitstype for elements of A allowed.
