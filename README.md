@@ -706,6 +706,71 @@ julia> bitstring.(halfshave(A,3),:split)
  "0 01111101 00010000000000000000000"
  "0 01111001 11110000000000000000000"
 ```
+### Bit transpose (aka bit "shuffle")
+
+Bit or byte shuffle operations re-order the bits or bytes in an array, such that bits/bytes
+for each element in that array are placed next to each other in memory. Despite the name,
+this operation is often called "shuffle", although there is nothing random about this,
+and it is perfectly reversible. Here, we call it bit transpose, as for an array with n
+elements of each n bits, this is equivalent to the matrix tranpose
+```julia
+julia> A = rand(UInt8,8);
+julia> bitstring.(A)
+8-element Array{String,1}:
+ "10101011"
+ "11100000"
+ "11010110"
+ "10001101"
+ "10000010"
+ "00011110"
+ "11111100"
+ "00011011"
+
+julia> At = bittranspose(A);
+julia> bitstring.(At)
+8-element Array{String,1}:
+ "11111010"
+ "01100010"
+ "11000010"
+ "00100111"
+ "10010111"
+ "00110110"
+ "10101101"
+ "10010001"
+```
+In general, we can bittranspose n-element arrays with nbits bits per element, which corresponds
+to a reshaped transpose. For floats, bittranspose will place all the sign bits next to each
+other in memory, then all the first exponent bits and so on. Often this creates a better
+compressible array, as bits with similar meaning (and often the same state in correlated data)
+are placed next to each other.
+```julia
+julia> A = rand(Float32,10);
+julia> Ar = round(A,7);
+
+julia> bitstring.(bittranspose(Ar))
+10-element Array{String,1}:
+ "00000000000000000000111111111111"
+ "11111111111111111111111111111011"
+ "11111101100001011100111010000001"
+ "00111000001010001010100111101001"
+ "00000101011101110110000101100010"
+ "00000000000000000000000000000000"
+ "00000000000000000000000000000000"
+ "00000000000000000000000000000000"
+ "00000000000000000000000000000000"
+ "00000000000000000000000000000000"
+```
+Now all the sign bits are in the first row, and so on. Using `round` means that all the zeros
+from rounding are now placed at the end of the array. The `bittranspose` function can be
+reversed by `bitbacktranspose`:
+```julia
+julia> A = rand(Float32,123,234);
+
+julia> A == bitbacktranspose(bittranspose(A))
+true
+```
+Both accept arrays of any shape for `UInt`s as well as floats.
+
 ### Bitpattern entropy
 
 The bitpattern entropy (i.e. a measure for the effective use of a given bit-encoding/quantisation)
