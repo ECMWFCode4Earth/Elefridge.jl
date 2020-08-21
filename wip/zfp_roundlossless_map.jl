@@ -5,15 +5,15 @@ using PyCall
 using Blosc
 using ColorSchemes
 using StatsBase, Statistics
-# using TranscodingStreams, CodecZstd
+using TranscodingStreams, CodecZstd
 xr = pyimport("xarray")
 ccrs = pyimport("cartopy.crs")
 
-# ZstdCompressorL5 = ZstdCompressor(level=5)
-# TranscodingStreams.initialize(ZstdCompressorL5)
+ZstdCompressorL22 = ZstdCompressor(level=22)
+TranscodingStreams.initialize(ZstdCompressorL22)
 
-# ZstdCompressorL22 = ZstdCompressor(level=22)
-# TranscodingStreams.initialize(ZstdCompressorL22)
+ZstdCompressorL3 = ZstdCompressor(level=3)
+TranscodingStreams.initialize(ZstdCompressorL3)
 
 path = "/Users/milan/cams/gridded/"
 filelist = filter(x->endswith(x,"_go3.grib"),readdir(path))
@@ -35,14 +35,14 @@ Blosc.set_compressor("lz4hc")
 for (i,r) in enumerate(rbits_ll)
     Xr = round(X,r)
     # Xr8 = unsafe_wrap(Array, Ptr{UInt8}(pointer(Xr)), sizeof(Xr))
-    # Xc = transcode(ZstdCompressorL5,Xr8)
+    # Xc = transcode(ZstdCompressorL3,Xr8)
     Xc = compress(Xr,level=9)
     cfs_ll[i] = sizeof(X)/sizeof(Xc)
     # decerr_ll[i] = maximum(vec(abs.(log2.(abs.(X./o3r)))))
 end
 
 ## compression zfp
-# X = permutedims(X,[3,2,1])      # for zfp vert x lat x lon
+X = permutedims(X,[3,2,1])      # for zfp vert x lat x lon
 rbits_zfp = [23,13,10,8,5,4]               # corresponds to the sigbits from above
 cfs_zfp = fill(0.0,length(rbits_zfp))     # compression factors
 # decerr_zfp = fill(0.0,length(rbits_zfp))   # decimal error
