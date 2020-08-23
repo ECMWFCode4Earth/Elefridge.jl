@@ -5,23 +5,30 @@ using Blosc
 using Elefridge
 using JLD
 using ZfpCompression
-using TranscodingStreams, CodecZstd
-
-
-ZstdCompressorL22 = ZstdCompressor(level=22)
-
-TranscodingStreams.initialize(DeflateCompressorL9)
-TranscodingStreams.initialize(ZstdCompressorL22)
 
 path = "/Users/milan/cams/gridded"
 filelist = filter(x->endswith(x,".grib"),readdir(path))
 
 n = length(filelist)
 varnames = fill("",n)
-methods = ["Blosc_L5","Blosc_L9","LZ4HC_L5","LZ4HC_L9","ZFP"]
+methods = ["Blosc_L5","Blosc_L9","LZ4HC_L5","LZ4HC_L9","ZFP","ZFP+1","ZFP-1"]
 stats = ["cf","meanerror","absmedian","abs90%","absmax","decmedian","dec90%","decmax"]
 
 E = fill(0f0,n,length(methods),length(stats))
+
+D = load("/Users/milan/cams/entropy/keepbits_98.jld")
+
+## RUN
+function rs_zfp(r::Int)
+    if r > 6
+        rd = 6
+    elseif r > 2
+        rd = 5
+    else
+        rd = 4
+    end
+    return r+rd
+end
 
 function statscalc(X0::Array{T,N},Xa::Array{T,N}) where {T,N}
     Xamean = mean(Xa)
@@ -56,7 +63,7 @@ function statscalc(X0::Array{T,N},Xa::Array{T,N}) where {T,N}
 end
 
 for (i,file) in enumerate(filelist)
-    varname = split(split(file,"_")[end],".")[1]
+    varname = split(split(file,"0_")[end],".")[1]
     varnames[i] = varname
     println("---")
     println("Reading $varname")
@@ -65,45 +72,47 @@ for (i,file) in enumerate(filelist)
     # transpose array
     X = permutedims(X,[3,2,1])  # unravels as longitude, latitude, level
 
-    negatives = any(X .< 0f0)  # check for negative entries
+    # number of bits of information
+    r = D["inf98"][D["varnames"] .== varname][1]-9
+    println("$r real information bits.")
 
-    ## LinQuant24
-    E[i,1,1] = 32/24     # compression factor
-    Xc = Array{Float32}(LinQuant24Array(X))
-    E[i,1,2:end] = statscalc(X,Xc)
-    println("LinQuant24 finished.")
+    Xr = round(X,r)
 
-    ## LogQuant16
-    E[i,2,1] = 32/16
-    if negatives       # don't compress
-        E[i,2,2:end] .= 0
-    else
-        Xc = Array{Float32}(LogQuant16Array(X))
-        E[i,2,2:end] = statscalc(X,Xc)
-    end
-    println("LogQuant16 finished.")
+    ## Round+BLOSC
+    E[i,1,2:end] = statscalc(X,Xr)
+    E[i,2,2:end] = E[i,1,2:end]         # copy across for Blosc L9 + LZ4HC L5/9
+    E[i,3,2:end] = E[i,1,2:end]
+    E[i,4,2:end] = E[i,1,2:end]
 
-    ## Round+lossless
-    for (j,r) in enumerate([7,5,3])
-        Xc = round(X,r)         # RN16,14,12
-        E[i,2+j,2:end] = statscalc(X,Xc)
-        E[i,5+j,2:end] = E[i,2+j,2:end]
-
-        Blosc.set_compressor("blosclz")
-        E[i,2+j,1] = sizeof(X)/sizeof(compress(Xc,level=5))
-        Blosc.set_compressor("lz4hc")
-        E[i,5+j,1] = sizeof(X)/sizeof(compress(Xc,level=5))
-        println("RN$(r+9)+Blosc/LZ4HC finished.")
-    end
+    Blosc.set_compressor("blosclz")
+    E[i,1,1] = sizeof(X)/sizeof(compress(Xr,level=5))
+    E[i,2,1] = sizeof(X)/sizeof(compress(Xr,level=9))
+    Blosc.set_compressor("lz4hc")
+    E[i,3,1] = sizeof(X)/sizeof(compress(Xr,level=5))
+    E[i,4,1] = sizeof(X)/sizeof(compress(Xr,level=9))
+    println("Blosc/LZ4HC finished.")
 
     ## Zfp
-    for (j,r) in enumerate([15,12,9])
-        Xc = zfp_compress(X,precision=r)
-        E[i,8+j,1] = sizeof(X)/sizeof(Xc)
-        X2 = zfp_decompress(Xc)
-        E[i,8+j,2:end] = statscalc(X,X2)
-        println("ZFP$r finished.")
-    end
+    # transpose array for zfp vertical, lat, lon
+    X = permutedims(X,[1,2,3])
 
+    r_zfp = rs_zfp(r)
+    Xc = zfp_compress(X,precision=r_zfp)
+    E[i,5,1] = sizeof(X)/sizeof(Xc)
+    X2 = zfp_decompress(Xc)
+    E[i,5,2:end] = statscalc(X,X2)
+
+    Xc = zfp_compress(X,precision=r_zfp+1)
+    E[i,6,1] = sizeof(X)/sizeof(Xc)
+    X2 = zfp_decompress(Xc)
+    E[i,6,2:end] = statscalc(X,X2)
+
+    Xc = zfp_compress(X,precision=r_zfp-1)
+    E[i,7,1] = sizeof(X)/sizeof(Xc)
+    X2 = zfp_decompress(Xc)
+    E[i,7,2:end] = statscalc(X,X2)
+
+    println("ZFP$r finished.")
+    println(E[i,:,1])
     @save "/Users/milan/cams/error/roundzfp_all_opt_gridded.jld" varnames methods stats E
 end

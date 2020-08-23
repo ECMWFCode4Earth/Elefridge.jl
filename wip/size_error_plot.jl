@@ -2,11 +2,20 @@ using PyPlot
 using JLD
 using Statistics
 
-@load "/Users/milan/cams/error/linlogroundzfp_all.jld"
+# load linear and logarithmic quantisation
+D = load("/Users/milan/cams/error/linlogroundzfp_all.jld")
 
-sort_out = .~[varname in ["w","etadot","d","vo"] for varname in varnames ]
-varnames = varnames[sort_out]
-E = E[sort_out,:,:]
+Elin = D["E"][:,1,:]
+Elog = D["E"][:,2,:]
+
+@load "/Users/milan/cams/error/roundzfp_all_opt_gridded.jld"
+
+Eround = E[:,4,:]
+Ezfp = E[:,5,:]
+
+# sort_out = .~[varname in ["w","etadot","d","vo"] for varname in varnames ]
+# varnames = varnames[sort_out]
+# E = E[sort_out,:,:]
 
 ## compression level
 complev = fill(3,length(varnames))
@@ -39,7 +48,7 @@ cfround = 1/mean(inv,Eround[:,1])
 cfzfp = 1/mean(inv,Ezfp[:,1])
 
 ## plotting
-ioff()
+pygui(true)
 fig,(ax1,ax2) = subplots(1,2,figsize=(10,5),sharey=true)
 
 colours = ["grey","k","C1","C2"]
@@ -99,5 +108,5 @@ ax2.text(1e-6,log2(cfround)+0.1,"$(Int(round(cfround)))x",color="C1",fontweight=
 ax2.text(1e-6,log2(cfzfp)+0.1,"$(Int(round(cfzfp)))x",color="C2",fontweight="bold")
 
 tight_layout()
-savefig("/Users/milan/git/Elefridge.jl/plots/linlogroundzfp_all.png")
-close(fig)
+# savefig("/Users/milan/git/Elefridge.jl/plots/linlogroundzfp_all.png")
+# close(fig)
