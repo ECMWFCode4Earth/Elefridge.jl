@@ -14,7 +14,9 @@ varnames = fill("",n)
 methods = ["Blosc_L5","Blosc_L9","LZ4HC_L5","LZ4HC_L9","ZFP","ZFP+1","ZFP-1"]
 stats = ["cf","meanerror","absmedian","abs90%","absmax","decmedian","dec90%","decmax"]
 
-E = fill(0f0,n,length(methods),length(stats))
+EE = load("/Users/milan/cams/error/roundzfp_all_opt_gridded.jld")
+# E = fill(0f0,n,length(methods),length(stats))
+E = EE["E"]
 
 D = load("/Users/milan/cams/entropy/keepbits_98.jld")
 
@@ -35,7 +37,9 @@ function statscalc(X0::Array{T,N},Xa::Array{T,N}) where {T,N}
     X0mean = mean(X0)
     meanerror = abs(X0mean-Xamean)/X0mean       # normalised
 
-    abserr = abs.(X0-Xa)/X0mean                 # normalised
+    X0amean = mean(abs.(X0))
+
+    abserr = abs.(X0-Xa)/X0amean                # normalised
     abserr = sort(vec(abserr))
     abs50 = T(quantile(abserr,.5,sorted=true))
     abs90 = T(quantile(abserr,.9,sorted=true))
@@ -65,54 +69,58 @@ end
 for (i,file) in enumerate(filelist)
     varname = split(split(file,"0_")[end],".")[1]
     varnames[i] = varname
-    println("---")
-    println("Reading $varname")
-    X = xr.open_dataarray(joinpath(path,file),engine="cfgrib").data
+    if varname in ["etadot","w","d","vo"]
+        println("---")
+        println("Reading $varname")
+        X = xr.open_dataarray(joinpath(path,file),engine="cfgrib").data
 
-    # transpose array
-    X = permutedims(X,[3,2,1])  # unravels as longitude, latitude, level
+        # transpose array
+        X = permutedims(X,[3,2,1])  # unravels as longitude, latitude, level
 
-    # number of bits of information
-    r = D["inf98"][D["varnames"] .== varname][1]-9
-    println("$r real information bits.")
+        # number of bits of information
+        r = D["infbits"][D["varnames"] .== varname][1]-9
+        r = max(r,2)    # don't use less than two
 
-    Xr = round(X,r)
+        println("$r real information bits.")
 
-    ## Round+BLOSC
-    E[i,1,2:end] = statscalc(X,Xr)
-    E[i,2,2:end] = E[i,1,2:end]         # copy across for Blosc L9 + LZ4HC L5/9
-    E[i,3,2:end] = E[i,1,2:end]
-    E[i,4,2:end] = E[i,1,2:end]
+        Xr = round(X,r)
 
-    Blosc.set_compressor("blosclz")
-    E[i,1,1] = sizeof(X)/sizeof(compress(Xr,level=5))
-    E[i,2,1] = sizeof(X)/sizeof(compress(Xr,level=9))
-    Blosc.set_compressor("lz4hc")
-    E[i,3,1] = sizeof(X)/sizeof(compress(Xr,level=5))
-    E[i,4,1] = sizeof(X)/sizeof(compress(Xr,level=9))
-    println("Blosc/LZ4HC finished.")
+        ## Round+BLOSC
+        E[i,1,2:end] = statscalc(X,Xr)
+        E[i,2,2:end] = E[i,1,2:end]         # copy across for Blosc L9 + LZ4HC L5/9
+        E[i,3,2:end] = E[i,1,2:end]
+        E[i,4,2:end] = E[i,1,2:end]
 
-    ## Zfp
-    # transpose array for zfp vertical, lat, lon
-    X = permutedims(X,[1,2,3])
+        # Blosc.set_compressor("blosclz")
+        # E[i,1,1] = sizeof(X)/sizeof(compress(Xr,level=5))
+        # E[i,2,1] = sizeof(X)/sizeof(compress(Xr,level=9))
+        # Blosc.set_compressor("lz4hc")
+        # E[i,3,1] = sizeof(X)/sizeof(compress(Xr,level=5))
+        # E[i,4,1] = sizeof(X)/sizeof(compress(Xr,level=9))
+        println("Blosc/LZ4HC finished.")
 
-    r_zfp = rs_zfp(r)
-    Xc = zfp_compress(X,precision=r_zfp)
-    E[i,5,1] = sizeof(X)/sizeof(Xc)
-    X2 = zfp_decompress(Xc)
-    E[i,5,2:end] = statscalc(X,X2)
+        ## Zfp
+        # transpose array for zfp vertical, lat, lon
+        X = permutedims(X,[1,2,3])
 
-    Xc = zfp_compress(X,precision=r_zfp+1)
-    E[i,6,1] = sizeof(X)/sizeof(Xc)
-    X2 = zfp_decompress(Xc)
-    E[i,6,2:end] = statscalc(X,X2)
+        r_zfp = rs_zfp(r)
+        Xc = zfp_compress(X,precision=r_zfp)
+        E[i,5,1] = sizeof(X)/sizeof(Xc)
+        X2 = zfp_decompress(Xc)
+        E[i,5,2:end] = statscalc(X,X2)
 
-    Xc = zfp_compress(X,precision=r_zfp-1)
-    E[i,7,1] = sizeof(X)/sizeof(Xc)
-    X2 = zfp_decompress(Xc)
-    E[i,7,2:end] = statscalc(X,X2)
+        Xc = zfp_compress(X,precision=r_zfp+1)
+        E[i,6,1] = sizeof(X)/sizeof(Xc)
+        X2 = zfp_decompress(Xc)
+        E[i,6,2:end] = statscalc(X,X2)
 
-    println("ZFP$r finished.")
-    println(E[i,:,1])
-    @save "/Users/milan/cams/error/roundzfp_all_opt_gridded.jld" varnames methods stats E
+        Xc = zfp_compress(X,precision=r_zfp-1)
+        E[i,7,1] = sizeof(X)/sizeof(Xc)
+        X2 = zfp_decompress(Xc)
+        E[i,7,2:end] = statscalc(X,X2)
+
+        println("ZFP$r finished.")
+        println(E[i,:,1])
+        @save "/Users/milan/cams/error/roundzfp_all_opt_gridded2.jld" varnames methods stats E
+    end
 end
