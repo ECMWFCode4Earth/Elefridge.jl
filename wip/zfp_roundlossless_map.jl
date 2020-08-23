@@ -9,12 +9,6 @@ using TranscodingStreams, CodecZstd
 xr = pyimport("xarray")
 ccrs = pyimport("cartopy.crs")
 
-ZstdCompressorL22 = ZstdCompressor(level=22)
-TranscodingStreams.initialize(ZstdCompressorL22)
-
-ZstdCompressorL3 = ZstdCompressor(level=3)
-TranscodingStreams.initialize(ZstdCompressorL3)
-
 path = "/Users/milan/cams/gridded/"
 filelist = filter(x->endswith(x,"_go3.grib"),readdir(path))
 grib = xr.open_dataarray(joinpath(path,filelist[end]),engine="cfgrib")
@@ -34,8 +28,6 @@ Blosc.set_compressor("lz4hc")
 
 for (i,r) in enumerate(rbits_ll)
     Xr = round(X,r)
-    # Xr8 = unsafe_wrap(Array, Ptr{UInt8}(pointer(Xr)), sizeof(Xr))
-    # Xc = transcode(ZstdCompressorL3,Xr8)
     Xc = compress(Xr,level=9)
     cfs_ll[i] = sizeof(X)/sizeof(Xc)
     # decerr_ll[i] = maximum(vec(abs.(log2.(abs.(X./o3r)))))
