@@ -44,20 +44,12 @@ ICsumnan[iszero.(ICsumnan)] .= NaN
 
 
 ## bit start
-bstart = [argmax(ICsum[i,2:end] .> 0) for i in 1:nvars]
-signbits = [ICsum[i,1] .> 0 ? 1 : 0 for i in 1:nvars]
-
-mininf = [argmin(ICsum[i,10:end])+9 for i in 1:nvars]
-
-# manual adjustment
-mininf[varnames.=="aermr08"] .= 1+8+7
-mininf[varnames.=="aermr10"] .= 1+8+7
-mininf[varnames.=="c5h8"] .= 1+8+4
-mininf[varnames.=="ole"] .= 1+8+4
+mininf = [argmin(ICsum[i,11:22])+9 for i in 1:nvars]
 
 IC_noiseremoved = copy(ICsum)
 for i in 1:nvars
     IC_noiseremoved[i,mininf[i]:end] .= 0
+    # IC_noiseremoved[i,IC_noiseremoved[i,:] .< 0.01] .= 0
 end
 
 ICcsum = cumsum(IC_noiseremoved,dims=2)
@@ -66,12 +58,30 @@ for i in 1:nvars
     ICcsum_norm[i,:] ./= ICcsum_norm[i,end]
 end
 
-inf99 = [argmax(ICcsum_norm[i,:] .> 0.98) for i in 1:nvars]
+inflevel = 0.98
+infbits = [argmax(ICcsum_norm[i,:] .> inflevel) for i in 1:nvars]
 
-# @save "/Users/milan/cams/entropy/keepbits_99.jld" inf99 varnames
+# manual adjustment
+for varname in ["aermr03","aermr08","aermr10","aermr16","aermr18",
+                "c2h4","c5h8","no","so2","ole","par"]
+    infbits[varnames.==varname] .= 1+8+3
+end
 
-inf99x = copy(vec(hcat(inf99,inf99)'))
-inf99y = copy(vec(hcat(Array(0:nvars-1),Array(1:nvars))'))
+# for cloud
+infbits[varnames.=="cc"] .= 1+8+5
+for varname in ["ciwc","clwc","crwc","cswc"]
+    infbits[varnames.==varname] .= 1+8+3
+end
+
+# for aerosols
+for varname in ["aermr04","aermr05","aermr06"]
+    infbits[varnames.==varname] .= 1+8+5
+end
+
+@save "/Users/milan/cams/entropy/keepbits_98.jld" infbits varnames
+
+infbitsx = copy(vec(hcat(infbits,infbits)'))
+infbitsy = copy(vec(hcat(Array(0:nvars-1),Array(1:nvars))'))
 ## plotting
 ioff()
 fig,ax1 = subplots(1,1,figsize=(8,10),sharey=true)
@@ -93,13 +103,13 @@ cbar = colorbar(pcm,cax=cax,orientation="horizontal")
 cbar.set_label("information content [bit]")
 
 # useful bit ranges
-ax1.plot(inf99,Array(0:nvars-1),"C1",ds="steps-pre",zorder=10)
+ax1.plot(vcat(infbits,infbits[end]),Array(0:nvars),"C1",ds="steps-pre",zorder=10)
 
 # for legend only
 ax1.fill_betweenx([-1,-1],[-1,-1],[-1,-1],color="w",edgecolor="k",label="unused bits")
 
 # grey shading
-ax1.fill_betweenx(inf99y,inf99x,fill(32,length(inf99x)),alpha=0.5,color="grey",label="noise / false information")
+ax1.fill_betweenx(infbitsy,infbitsx,fill(32,length(infbitsx)),alpha=0.5,color="grey",label="noise / false information")
 
 ax1.axvline(1,color="k",lw=1,zorder=3)
 ax1.axvline(9,color="k",lw=1,zorder=3)
@@ -122,9 +132,9 @@ ax1right.set_yticklabels([@sprintf "%4.1f" i for i in ICcsum[:,end]])
 ax1right.set_ylabel("information per value [bit]")
 ax1.set_ylabel("variable")
 
-ax1.text(inf99[1]+0.1,0.8,"$(inf99[1]-9) significant bits",fontsize=8,color="k")
+ax1.text(infbits[1]+0.1,0.8,"$(infbits[1]-9) significant bits",fontsize=8,color="k")
 for i in 2:nvars
-    ax1.text(inf99[i]+0.1,(i-1)+0.8,"$(inf99[i]-9)",fontsize=8,color="k")
+    ax1.text(infbits[i]+0.1,(i-1)+0.8,"$(infbits[i]-9)",fontsize=8,color="k")
 end
 
 ax1.set_xticks([1,9])
