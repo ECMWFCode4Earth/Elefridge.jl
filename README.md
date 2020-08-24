@@ -14,24 +14,22 @@ This repository summarises the results on [ECMWF](https://www.ecmwf.int)'s [summ
 ## Abstract
 
 Enormous amounts of data are produced at weather and climate forecast centres
-worldwide. Compressing large data sets is inevitable to reduce storage and data
-sharing requirements. Current compression techniques in forecast centres do not
+worldwide. Compressing large data sets is inevitable to reduce storage and and to
+facilitate data sharing. Current compression techniques in forecast centres do not
 exploit the spatio-temporal correlation of many atmospheric variables nor do
 they only compress the real information contained in 32 or 64-bit floating-point
 numbers. Here, we find alternatives to the default 24-bit linear quantisation
 compression in the Copernicus Atmospheric Monitoring Service (CAMS) data set and
 provide a perspective for climate data compression at large compression factors.
-Logarithmic quantisation was found to better match the data distributions in CAMS,
-allowing for successful compression at 16-bit per value.
 The bitwise information content is calculated in the original 32-bit floating-point
-number encoding, suggesting only 3-9 significant bits contain real information
+number encoding, suggesting only 2 to 5 significant bits contain real information
 for most variables. Floating-point quantisation can consequently set bits that
 do not contain information to 0, facilitating available lossless compression
 algorithms. The entire CAMS data set can be compressed into its real information
 with this technique by a factor of 13, relative to 32-bit floating-point numbers.
 Most lossless compression algorithms work on one-dimensional arrays, but making
 use of the correlation in three spatial dimensions with the compression method
-zfp, an overall compression factor of 26 (1.2 bit per value) for the entire dataset
+zfp, an overall compression factor of 24 (1.3 bit per value) for the entire dataset
 is achieved. This study provides evidence that climate and weather forecast data
 archives can be reduced by one to two orders of magnitude in size without losing
 valuable information.
@@ -108,7 +106,7 @@ are approximately symmetrically distributed around 0.
 | Ozone mass mixing ratio 1   | o3    | kg/kg | 21.3 bit | | |
 | Ozone mass mixing ratio 2   | go3   | kg/kg | 24.5 bit | | |
 | Stratospheric ozone         | o3s   | kg/kg | 24.9 bit | | |
-| **?**|
+| **Others**|
 | Olefins                     | ole   | kg/kg | 5.2 bit |  |  |
 | Organic nitrates            | onit  | kg/kg | 24.5 bit|  |  |
 | Peroxyacetyl nitrate        | pan   | kg/kg | 24.4 bit|  |  |
@@ -118,11 +116,17 @@ are approximately symmetrically distributed around 0.
 the bitpattern entropy in Float32, the share of exact zero in the dataset, and
 the share of negative values.
 
+The data is provided on an octahedral grid, which covers the globe with a triangular
+mesh, with cells approximately 0.4° apart. In the vertical, [137 levels](https://www.ecmwf.
+int/en/forecasts/documentation-and-support/137-model-levels) are provided
+ranging from the surface with an increasing layer height to an altitude of about 80km.
+Approximately half the levels are in the troposphere. 
+
 The statistical distributions of values in the CAMS variables are often multi-modal,
 and mostly rather logarithmically than linearly distributed (Fig. 1) and span often
 several orders of magnitude. Many variables are quantized for small values, some,
 like the cloud water species or cloud cover are entirely quantized. Such quantization
-is reflected in the bitpattern entropy (see 1a), as many bit patterns do not have
+is reflected in the bitpattern entropy (see 1a), as many bit patterns would not have
 to be encoded.
 
 ![](https://github.com/esowc/Elefridge.jl/blob/master/plots/distr_all.png)
@@ -260,16 +264,19 @@ mean error = ∑ᵢ (Aᵢ - Qᵢ)
 which quantifies a rounding bias between `A` and `Q`. The mean error can be normalised
 to allow easier comparison between different data sets.
 ```julia
-normalised mean error = ∑ᵢ (Aᵢ - Qᵢ) / ∑ᵢ Aᵢ
+normalised mean error = ∑ᵢ (Aᵢ - Qᵢ) / ∑ᵢ |Aᵢ|
 ```
 The normalisation does not change the qualitative results of comparing different
-quantisation methods `Q1,Q2,...` as the division by the mean of A is for all identical.
+quantisation methods `Q1,Q2,...` as the division by the mean of the absolute of A is
+for all identical. Although most variables are non-negative, we normalize by the
+mean of the absolute values to have a comparable error for the dynamical variables
+(Divergence, Vorticity and Velocity) with a mean that approaches zero.
 
 ### Normalised absolute error
 
 The normalised absolute error is
 ```julia
-normalised absolute error = abs(Aᵢ - Qᵢ) / ∑ᵢ Aᵢ
+normalised absolute error = abs(Aᵢ - Qᵢ) / ∑ᵢ |Aᵢ|
 ```
 which measures the average distance of values in `A` to their respective quantums `Qᵢ`.
 The normalised absolute error is an array of the same size as `A` and `Q`, such
@@ -413,21 +420,21 @@ variables are within the range [0,1).
 
 **Figure 5.** Bitwise information content for all variables in the CAMS data set
 encoded as Float32. Bits that do not contain real information are grey-shaded.
-The total information is the sum of the real information bits.
+The total information is the sum of the real information bits. The bits that
+should be retained for compression are enclosed in orange.
 
 Most variables in the CAMS dataset do not use the sign bit, nor the sign bit of
-the exponent as their information is 0. Exceptions are the variables derived
-from the wind velocities, divergence d, etadot, vorticity vo and vertical
-velocity w. Other exponent bits usually have a high information content as
+the exponent as their values are in `[0,1)`. Consequently, the information is 0.
+Exceptions are the dynamical variables divergence, vorticity and velocity.
+Other exponent bits usually have a high information content as
 they are slowly varying throughout space. The information drops quickly to zero
-beyond the first significant bits and in most cases only the first 3-9
+beyond the first significant bits and in most cases only the first 2 to 5
 significant bits contain real information. For some variables information
-re-emerges for the least significant bits, which is presumably caused by some
-unphysical quantisation artefacts in the underlying equations. The total
-information per value, which is the sum of the information in the real
-information bits, rarely exceeds 7 bit. Some variables like CO, CO2, CH4
-(including its variants ch4_c, kch4) and temperature have a high share of
-information stored in the significant bits.
+re-emerges for the least significant bits, which is caused by quantisation artefacts
+in the forecast model. The total information per value, which is the sum of the
+information in the real information bits, rarely exceeds 7 bit. Some variables
+like CO, CO2, CH4 (including its variants ch4_c, kch4) and temperature have a
+high share of information stored in the significant bits.
 
 The number of significant bits that contain real information can be used to
 inform the compression algorithm about the required precision.
@@ -493,10 +500,12 @@ aim for reasonable error bounds instead of reducing the error as possible.
 ![](https://github.com/esowc/Elefridge.jl/blob/master/plots/linlogroundzfp_all.png)
 
 **Figure 7.** Compression factor versus absolute and decimal error for linear and
-logarithmic quantisation, round+lossless and zfp compression. Every circle represents
-the 90th percentile of the respective error norms for one variable. Lossless compression
-is the LZ4HC algorithm (level 5). The geometric mean of compression factors over
-all variables is given as horizontal lines.
+logarithmic quantisation, round+lossless and zfp compression. Every symbol represents
+the 90th percentile of the respective error norms. Lossless compression
+is the Zstandard (level 22). The geometric mean of compression factors over
+all variables is given as horizontal lines. Compression factors are relative to
+the octahedral grid, which has about 15% fewer grid points then the interpolation
+onto a regular latitude-longitude grid.
 
 ## 6. 2-4D array floating-point compression
 
@@ -518,21 +527,20 @@ array into blocks of size 4^n and allows absolute or decimal errors to be specif
 and therefore bound in the compressed array.
 
 Comparing different levels of precision for round+lossless with zfp shows that
-zfp in general achieves about 3-4 times higher compression ratios in the case
-of ozone (Fig. 7). Round+lossless provides reasonably small errors for compression
-factors of 12, whereas zfp achieves a factor 53 at similar precision.
+zfp in general achieves significantly higher compression ratios in the case
+of ozone (Fig. 8). Round+lossless provides reasonably small errors for compression
+factors of 17 at 5 significant bits retained, whereas zfp achieves a factor of 28.
 
 ![](https://github.com/esowc/Elefridge.jl/blob/master/maps/zfp_lossless_o3_85.png)
 **Figure 8.** Compression of ozone (O3) at different levels of precision with
-(a) round+lossless and (b) zfp compression. The retained 23,7,5,3,1,0 significant bits
-corresponds to retaining 100%, 99.9%, 99%, 95%, 82% and 71% of real information, respectively. 
-Only one vertical level in the high troposphere (model level 85) is shown, but compression
-factors include all vertical levels.
+(a) round+lossless (Zstandard level 22) and (b) zfp compression. The retained
+23,7,5,3,1,0 significant bits correspond to retaining 100%, 99.9%, 99%, 95%,
+82% and 71% of real information, respectively.  Only one vertical level at an altitude
+of about 8km is shown, but compression factors include all vertical levels and
+are relative to the dataset on a regular latitude-longitude grid.
 
 Applying zfp compression with precision levels as informed by the bitwise information
-contents to the entire CAMS data set, an overall compression factor of 23 is achieved.
-Some variables, such as ozone, are highly compressible, whereas many others can
-only be compressed to about 16-25x.
+contents to the entire CAMS data set, an overall compression factor of 24 is achieved.
 
 # Conclusion: A roadmap for atmospheric data compression
 
