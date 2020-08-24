@@ -25,7 +25,7 @@ X = grib.data
 lat = grib.latitude.data
 lon = grib.longitude.data
 
-level = 85
+level = 74
 X = permutedims(X,[3,2,1])      # for lossless longitude first
 o3 = X[:,:,level]
 
@@ -33,7 +33,7 @@ o3 = X[:,:,level]
 rbits_ll = [23,7,5,3,1,0]
 cfs_ll = fill(0.0,length(rbits_ll))     # compression factors
 decerr_ll = fill(0.0,length(rbits_ll))
-Blosc.set_compressor("lz4hc")
+# Blosc.set_compressor("lz4hc")
 
 for (i,r) in enumerate(rbits_ll)
     Xr = round(X[1:450,:,:],r)
@@ -149,5 +149,5 @@ ax1.set_title(L"O$_3$ zfp compression")
 ax1.set_title("b",fontweight="bold",loc="right")
 
 tight_layout(rect=[0.02,0.08,1,1])
-savefig("/Users/milan/git/Elefridge.jl/maps/zfp_lossless_o3_$level.png",dpi=300)
+savefig("/Users/milan/git/Elefridge.jl/maps/zfp_lossless_o3_$level.png",dpi=200)
 close(fig)
