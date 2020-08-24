@@ -3,20 +3,20 @@ using JLD
 using Statistics
 
 # load linear and logarithmic quantisation
-D = load("/Users/milan/cams/error/linlogroundzfp_all.jld")
+D1 = load("/Users/milan/cams/error/linlogroundzfp_all.jld")
 
-Elin = D["E"][:,1,:]
-Elog = D["E"][:,2,:]
+Elin = D1["E"][:,1,:]
+Elog = D1["E"][:,2,:]
+
+D2 = load("/Users/milan/cams/error/round_zstd_all_gridded.jld")
+Eround = D2["E"][:,3,:]  # make compression factors relative to unstructured grid
+Eround[:,1] .= Eround[:,1]/(900*451)*(348528)
 
 @load "/Users/milan/cams/error/roundzfp_all_opt_gridded2.jld"
-Eround = E[:,4,:]
 Ezfp = E[:,5,:]
 Ezfp[[33,34,54,55],:] = E[[33,34,54,55],6,:]
 
-# make compression factors relative to unstructured grid
-Eround[:,1] .= Eround[:,1]/(900*451)*(348528)
 Ezfp[:,1] .= Ezfp[:,1]/(900*451)*(348528)
-
 
 ## sort into groups
 aero = Array(1:15)
