@@ -779,6 +779,48 @@ true
 ```
 Both accept arrays of any shape for `UInt`s as well as floats.
 
+### XOR delta
+
+Instead of storing every element in an array as itself, you may want to store the difference to the
+previous value. For bits this "difference" generalises to the reversible xor-operation. The `xor_delta`
+function applies this operation to a UInt or Float array:
+```julia
+julia> A = rand(UInt16,4)
+4-element Array{UInt16,1}:
+ 0x2569
+ 0x97d2
+ 0x7274
+ 0x4783
+
+julia> xor_delta(A)
+4-element Array{UInt16,1}:
+ 0x2569
+ 0xb2bb
+ 0xe5a6
+ 0x35f7
+```
+And is reversible with `unxor_delta`.
+```
+julia> A == unxor_delta(xor_delta(A))
+true
+```
+This method is interesting for correlated data, as many bits will be 0 in the XORed array:
+```julia
+julia> A = sort(1 .+ rand(Float32,100000));
+julia> Ax = xor_delta(A);
+julia> bitstring.(Ax)
+100000-element Array{String,1}:
+ "00111111100000000000000000000101"
+ "00000000000000000000000010110011"
+ "00000000000000000000000000001000"
+ "00000000000000000000000001101110"
+ "00000000000000000000000101101001"
+ "00000000000000000000000001101100"
+ "00000000000000000000001111011000"
+ "00000000000000000000000010001101"
+ ⋮
+```
+
 ### Bitpattern entropy
 
 The bitpattern entropy (i.e. a measure for the effective use of a given bit-encoding/quantisation)
