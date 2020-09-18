@@ -7,7 +7,8 @@ module Elefridge
 
     export bitstring, bitentropy, bitcount, bitpaircount,
         bitinformation, signed_exponent, signed_exponent!,
-        bittranspose, bitbacktranspose
+        bittranspose, bitbacktranspose, xor_delta,
+        unxor_delta
 
 
     using StatsBase
