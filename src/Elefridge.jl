@@ -30,5 +30,6 @@ module Elefridge
     include("bitstring.jl")
     include("infcontent.jl")
     include("bittranspose.jl")
+    include("xor_delta.jl")
 
 end
