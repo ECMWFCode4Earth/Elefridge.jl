@@ -117,9 +117,7 @@ the bitpattern entropy in Float32, the share of exact zero in the dataset, and
 the share of negative values.
 
 The data is provided on an octahedral grid, which covers the globe with a triangular
-mesh, with cells approximately 0.4° apart. In the vertical, [137 levels](https://www.ecmwf.
-int/en/forecasts/documentation-and-support/137-model-levels) are provided
-ranging from the surface with an increasing layer height to an altitude of about 80km.
+mesh, with cells approximately 0.4° apart. In the vertical, [137 levels](https://www.ecmwf.int/en/forecasts/documentation-and-support/137-model-levels) are provided ranging from the surface with an increasing layer height to an altitude of about 80km.
 Approximately half the levels are in the troposphere. 
 
 The statistical distributions of values in the CAMS variables are often multi-modal,
