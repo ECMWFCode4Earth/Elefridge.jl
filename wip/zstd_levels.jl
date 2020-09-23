@@ -35,7 +35,7 @@ cfs = fill(0.0,22)    # compression factors
 speed_comp = fill(0.0,22)         # compression speeds and decompression
 speed_decomp = fill(0.0,22)
 
-for i in 1:5       # do the first one twice for pre-compile
+for i in 1:22       # do the first one twice for pre-compile
     println(i)
     Xc = transcode(ZstdCompressors[i],Xr8)
     cfs[i] = sizeof(Xr)/sizeof(Xc)*2/(900*451)*(348528)    # relative to Float64 and unstructured grid
