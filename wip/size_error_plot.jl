@@ -7,16 +7,19 @@ D1 = load("/Users/milan/cams/error/linlogroundzfp_all.jld")
 
 Elin = D1["E"][:,1,:]
 Elog = D1["E"][:,2,:]
+# make compression factors relative to Float64
+Elin[:,1] .*= 2
+Elog[:,1] .*= 2
 
 D2 = load("/Users/milan/cams/error/round_zstd_all_gridded.jld")
 Eround = D2["E"][:,3,:]  # make compression factors relative to unstructured grid
-Eround[:,1] .= Eround[:,1]/(900*451)*(348528)
+Eround[:,1] .= Eround[:,1]/(900*451)*(348528)*2
 
 @load "/Users/milan/cams/error/roundzfp_all_opt_gridded2.jld"
 Ezfp = E[:,5,:]
 Ezfp[[33,34,54,55],:] = E[[33,34,54,55],6,:]
 
-Ezfp[:,1] .= Ezfp[:,1]/(900*451)*(348528)
+Ezfp[:,1] .= Ezfp[:,1]/(900*451)*(348528)*2
 
 ## sort into groups
 aero = Array(1:15)
@@ -48,7 +51,7 @@ fig,(ax1,ax2) = subplots(1,2,figsize=(10,5),sharey=true)
 colours = ["grey","k","C1","C2"]
 labls = ["LinQuant24","LogQuant16","Round+lossless","Zfp"]
 labls2 = ["Aerosols","Carbon oxides","Clouds & water","Methane","Alkanes,\nalcohols",
-            "Dynamics &\ntemperature","N&S oxides","Ozone","?"]
+            "Dynamics &\ntemperature","N&S oxides","Ozone","Others"]
 symblist = ["v","^",">","<","d","s","D","p","h"]
 
 alfa = 0.7
@@ -81,7 +84,7 @@ end
 # end
 
 ax1.set_yticks([0,1,2,3,4,5,6,7,8,9])
-ax1.set_yticks(log2.(Array(2:2:128)),minor=true)
+ax1.set_yticks(log2.(Array(4:4:256)),minor=true)
 ax1.set_yticklabels([1,2,4,8,16,32,64,128,256,512])
 ax1.set_xscale("log")
 ax2.set_xscale("log")
@@ -89,8 +92,8 @@ ax2.set_xscale("log")
 ax1.set_xlim(2e-8,9)
 ax2.set_xlim(2e-7,99)
 
-ax1.set_ylim(0,log2(128))
-ax2.set_ylim(0,log2(128))
+ax1.set_ylim(1,log2(256))
+ax2.set_ylim(1,log2(256))
 
 ax1.set_title("Absolute error",loc="left")
 ax2.set_title("Decimal error",loc="left")

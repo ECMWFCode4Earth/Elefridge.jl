@@ -25,7 +25,7 @@ X = grib.data
 lat = grib.latitude.data
 lon = grib.longitude.data
 
-level = 74
+level = 85
 X = permutedims(X,[3,2,1])      # for lossless longitude first
 o3 = X[:,:,level]
 
@@ -36,30 +36,30 @@ decerr_ll = fill(0.0,length(rbits_ll))
 # Blosc.set_compressor("lz4hc")
 
 for (i,r) in enumerate(rbits_ll)
-    Xr = round(X[1:450,:,:],r)
+    Xr = round(X[1:450,:,:],r)      # use only half the longitudes for speed-up
 
     Xr8 = unsafe_wrap(Array, Ptr{UInt8}(pointer(Xr)), sizeof(Xr))
     Xc = transcode(ZstdCompressorL22,Xr8)
 
     # Xc = compress(Xr,level=5)
-    cfs_ll[i] = sizeof(Xr)/sizeof(Xc)
+    cfs_ll[i] = sizeof(Xr)/sizeof(Xc)*2/(900*451)*(348528)    # relative to Float64 and unstructured grid
     # decerr_ll[i] = maximum(vec(abs.(log2.(abs.(X./o3r)))))
 end
 
 ## compression zfp
-X = permutedims(X,[3,2,1])      # for zfp vert x lat x lon
+# X = permutedims(X,[3,2,1])      # for zfp vert x lat x lon
 rbits_zfp = [23,13,10,8,5,4]               # corresponds to the sigbits from above
 cfs_zfp = fill(0.0,length(rbits_zfp))     # compression factors
 # decerr_zfp = fill(0.0,length(rbits_zfp))   # decimal error
 
 O3plot = fill(0f0,length(rbits_zfp)-1,size(o3)...)
 
-# zfp lossless
-cfs_zfp[1] = sizeof(X)/sizeof(zfp_compress(X))
+# zfp lossless, relative to Float64 and unstructured grid
+cfs_zfp[1] = sizeof(X)/sizeof(zfp_compress(X))*2/(900*451)*(348528)
 
 for (i,r) in enumerate(rbits_zfp[2:end])
     Xc = zfp_compress(X,precision=r)
-    cfs_zfp[i+1] = sizeof(X)/sizeof(Xc)
+    cfs_zfp[i+1] = sizeof(X)/sizeof(Xc)*2/(900*451)*(348528)
     O3plot[i,:,:] = zfp_decompress(Xc)[level,:,:]'
     # local o3r = zfp_decompress(o3c)
     # decerr_zfp[i+1] = median(vec(abs.(log2.(abs.(X./o3r)))))
@@ -119,7 +119,7 @@ ax0.text(0.02,0.02,"Compression\n               factor",transform=ax0.transAxes,
 ax0.text(0.02,0.93,"         Significant\nbits retained",transform=ax0.transAxes,fontsize=8)
 ax0.text(0.88,0.87,"Real information\n       preserved",transform=ax0.transAxes,fontsize=8)
 
-info_preserved = ["100%","99.9%","98%","95%","82%","71%"]
+info_preserved = ["100%","99.9%","99%","95%","82%","71%"]
 
 for (i,x) in enumerate([0.16,0.28,0.41,0.54,0.65,0.77])
     ax0.text(x,0.89,info_preserved[i],transform=ax0.transAxes,fontweight="bold",
