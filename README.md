@@ -1,3 +1,49 @@
+[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
+[![Build Status](https://travis-ci.com/milankl/Elefridge.jl.svg?branch=master)](https://travis-ci.com/milankl/Elefridge.jl.svg)
+[![AppVeyor](https://img.shields.io/appveyor/ci/milankl/Sherlogs-jl?label=Windows&logo=appveyor&logoColor=white)](https://ci.appveyor.com/project/milankl/Sherlogs-jl)
+
+
+# Elefridge.jl - Compressing atmospheric data into its real information
+
+**Milan Klöwer**\
+Atmospheric, Oceanic and Planetary Physics, University of Oxford\
+*milan.kloewer@physics.ox.ac.uk*
+
+This repository summarises the results on [ECMWF](https://www.ecmwf.int)'s [summer of weather code](https://esowc.ecmwf.int) [challege #14: Size, precision, speed - pick two](https://github.com/esowc/challenges_2020/issues/4). For comments and changes, please raise an [issue](https://github.com/esowc/Elefridge.jl/issues) or create a pull request. The original prosal is [here](https://github.com/esowc/Elefridge.jl/blob/master/proposal.md).
+
+## Abstract
+
+Enormous amounts of data are produced at weather and climate forecast centres
+worldwide. Compressing large data sets is inevitable to reduce storage and and to
+facilitate data sharing. Current compression techniques in forecast centres do not
+exploit the spatio-temporal correlation of many atmospheric variables nor do
+they only compress the real information contained in 32 or 64-bit floating-point
+numbers. Here, we find alternatives to the default 24-bit linear quantisation
+compression in the Copernicus Atmospheric Monitoring Service (CAMS) data set and
+provide a perspective for climate data compression at large compression factors.
+The bitwise information content is calculated in the original 32-bit floating-point
+number encoding, suggesting only 2 to 5 significant bits contain real information
+for most variables. Floating-point quantisation can consequently set bits that
+do not contain information to 0, facilitating available lossless compression
+algorithms. The entire CAMS data set can be compressed into its real information
+with this technique by a factor of 13, relative to 32-bit floating-point numbers.
+Most lossless compression algorithms work on one-dimensional arrays, but making
+use of the correlation in three spatial dimensions with the compression method
+zfp, an overall compression factor of 24 (1.3 bit per value) for the entire dataset
+is achieved. This study provides evidence that climate and weather forecast data
+archives can be reduced by one to two orders of magnitude in size without losing
+valuable information.
+
+## 0. Atmospheric variables in CAMS
+
+Atmospheric variables in the Copernicus Atmospheric Monitoring Service (CAMS)
+are stored on each of the 137 model levels, as well as on pressure levels and at
+the surface. Compressing the variables on model levels are most important as their
+storage requirements are largest. An overview of the variables is presented in Table 1.
+Most variables have only positive values, but some of the water species and cloud cover
+has a large share of zeros. Only the dynamical variables, deriving from wind velocities
+are approximately symmetrically distributed around 0.
+
 | Name |  Abbrev.      | Unit | Float32 entropy | Zeros | <0    |
 | ---- | ------------- | ---: | --------------: | ----: | -----:|
 | **Aerosols**|
