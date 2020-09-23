@@ -162,6 +162,18 @@ ax2.set_xlabel("value")
 # ax1.set_ylabel("frequency")
 
 ax1.set_title("Histograms of CAMS variables",loc="left")
-ax2y2.set_ylabel("variable")
+# ax2y2.set_ylabel("variable")
+
+ax1.text(3e-25,0.323,"Aerosols",color=groups1colors[1])
+ax1.text(3e-25,0.153,"Alkanes & alcohols",color=groups1colors[2])
+ax1.text(3e-25,0.073,"Alkanes & alcohols",color=groups1colors[3])
+
+ax2.text(2e-25,0.313,"Dynamics & temperature",color=groups2colors[1])
+ax2.text(2e-25,0.253,"Clouds & water",color=groups2colors[2])
+ax2.text(3e-24,0.183,"N&S oxides",color=groups2colors[3])
+ax2.text(2e-25,0.143,"Others",color=groups2colors[4])
+ax2.text(2e-25,0.093,"Ozone",color=groups2colors[5])
+ax2.text(2e-25,0.053,"Carbon oxides",color=groups2colors[6])
+ax2.text(2e-25,0.023,"Methane",color=groups2colors[7])
 
 tight_layout()

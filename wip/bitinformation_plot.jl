@@ -78,6 +78,9 @@ for varname in ["aermr04","aermr05","aermr06"]
     infbits[varnames.==varname] .= 1+8+5
 end
 
+# don't go below 0
+infbits[infbits .< 9] .= 9
+
 @save "/Users/milan/cams/entropy/keepbits_98.jld" infbits varnames
 
 infbitsx = copy(vec(hcat(infbits,infbits)'))
@@ -130,7 +133,7 @@ ax1right.set_yticks(Array(1:nvars).-0.5)
 ax1.set_yticklabels(varnames)
 ax1right.set_yticklabels([@sprintf "%4.1f" i for i in ICcsum[:,end]])
 ax1right.set_ylabel("information per value [bit]")
-ax1.set_ylabel("variable")
+# ax1.set_ylabel("variable")
 
 ax1.text(infbits[1]+0.1,0.8,"$(infbits[1]-9) significant bits",fontsize=8,color="k")
 for i in 2:nvars
