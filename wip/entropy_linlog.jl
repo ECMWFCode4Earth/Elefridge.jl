@@ -3,7 +3,7 @@ xr = pyimport("xarray")
 using Elefridge
 using JLD
 
-path = "/Users/milan/cams/gridded"
+path = "/Users/milan/cams/gridded/"
 filelist = filter(x->endswith(x,".grib"),readdir(path))
 
 n = length(filelist)
@@ -27,11 +27,11 @@ for (i,file) in enumerate(filelist)
         Xlin = LinQuant16Array(X)
         Hlin[i] = bitentropy(Xlin)
 
-        Xlog = LogQuant16Array(X,:logspace)
+        Xlog = LogQuant16Array(X)
         Hlog[i] = bitentropy(Xlog)
 
         println("Hlin = $(Hlin[i]) bit, Hlog = $(Hlog[i]) bit")
     end
 end
 
-save("/Users/milan/cams/entropy/gridded_linlog16_nozeroes.jld","varnames",varnames,"Hlin",Hlin,"Hlog",Hlog)
+# save("/Users/milan/cams/entropy/unstructured_linlog16_nozeroes.jld","varnames",varnames,"Hlin",Hlin,"Hlog",Hlog)
