@@ -1093,7 +1093,7 @@ space, i.e. `1+(b-1)/2` should yield halway in log-space, i.e. 0.5
 ```julia
 c_b + log_b(1+(b-1)/2) = 0.5
 ```
-So, for `b=2` we have `c_b = 0.5 + log2(1.5) ≈ -0.085`. Hence, a small number will
+So, for `b=2` we have `c_b = 0.5 - log2(1.5) ≈ -0.085`. Hence, a small number will
 be subtracted before rounding is applied to reduce the away-from-zero bias.
 
 ![](https://github.com/esowc/Elefridge.jl/blob/master/plots/round_logquant.png)
