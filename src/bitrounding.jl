@@ -49,7 +49,13 @@ function Base.round(X::AbstractArray{Float32},nsb::Integer)
     semask = setmask32(nsb)
     s = shift32(nsb)
     shmask = ~mask32(nsb)
-    return round.(X,semask,s,shmask)
+
+    Y = similar(X)                              # preallocate
+    for i in eachindex(X)
+        Y[i] = round(X[i],semask,s,shmask)
+    end
+    
+    return Y
 end
 
 """Round to nearest for a Float64 array `X`. The bit-masks are only created once
@@ -58,7 +64,13 @@ function Base.round(X::AbstractArray{Float64},nsb::Integer)
     semask = setmask64(nsb)
     s = shift64(nsb)
     shmask = ~mask64(nsb)
-    return round.(X,semask,s,shmask)
+
+    Y = similar(X)
+    for i in eachindex(X)
+        Y[i] = round(X[i],semask,s,shmask)
+    end
+
+    return Y
 end
 
 """Number of significant bits `nsb` given the number of significant digits `nsd`."""
