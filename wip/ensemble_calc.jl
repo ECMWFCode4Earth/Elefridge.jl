@@ -33,7 +33,7 @@ BI = try load("/home/milan/analysis/bitinformation_$(Nens)members_$steps.jld2","
 
 temp = fill(0f0,Nens,Nlon,Nlat,Nvert)
 
-for t in 1:Ntsteps
+for t in 58:Ntsteps
     println("Time step $t")
     temp[:] .= 0f0
     
