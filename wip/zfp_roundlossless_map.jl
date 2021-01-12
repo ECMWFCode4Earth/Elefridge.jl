@@ -12,14 +12,14 @@ ccrs = pyimport("cartopy.crs")
 ZstdCompressorL3 = ZstdCompressor(level=3)
 TranscodingStreams.initialize(ZstdCompressorL3)
 
-ZstdCompressorL10 = ZstdCompressor(level=3)
+ZstdCompressorL10 = ZstdCompressor(level=10)
 TranscodingStreams.initialize(ZstdCompressorL10)
 
-ZstdCompressorL22 = ZstdCompressor(level=3)
+ZstdCompressorL22 = ZstdCompressor(level=22)
 TranscodingStreams.initialize(ZstdCompressorL22)
 
 path = "/Users/milan/cams/gridded/"
-filelist = filter(x->endswith(x,"_go3.grib"),readdir(path))
+filelist = filter(x->endswith(x,"_t.grib"),readdir(path))
 grib = xr.open_dataarray(joinpath(path,filelist[end]),engine="cfgrib")
 X = grib.data
 lat = grib.latitude.data
@@ -30,7 +30,7 @@ X = permutedims(X,[3,2,1])      # for lossless longitude first
 o3 = X[:,:,level]
 
 ## compression round + LZ4HC/Zstd
-rbits_ll = [23,7,5,3,1,0]
+rbits_ll = [23,9,8,7,6,5]
 cfs_ll = fill(0.0,length(rbits_ll))     # compression factors
 decerr_ll = fill(0.0,length(rbits_ll))
 # Blosc.set_compressor("lz4hc")
@@ -39,7 +39,7 @@ for (i,r) in enumerate(rbits_ll)
     Xr = round(X[1:450,:,:],r)      # use only half the longitudes for speed-up
 
     Xr8 = unsafe_wrap(Array, Ptr{UInt8}(pointer(Xr)), sizeof(Xr))
-    Xc = transcode(ZstdCompressorL22,Xr8)
+    Xc = transcode(ZstdCompressorL3,Xr8)
 
     # Xc = compress(Xr,level=5)
     cfs_ll[i] = sizeof(Xr)/sizeof(Xc)*2/(900*451)*(348528)    # relative to Float64 and unstructured grid
@@ -47,12 +47,21 @@ for (i,r) in enumerate(rbits_ll)
 end
 
 ## compression zfp
-X = grib.data
-# X = permutedims(X,[3,2,1])      # for zfp vert x lat x lon
-rbits_zfp = [23,13,10,8,5,4]               # corresponds to the sigbits from above
-rbits_zfp = [23,1e-1,5e-1,4,20,50]
-cfs_zfp = fill(0.0,length(rbits_zfp))     # compression factors
-# decerr_zfp = fill(0.0,length(rbits_zfp))   # decimal error
+function rs_zfp(r::Int)
+    if r > 6
+        rd = 6
+    elseif r > 2
+        rd = 5
+    else
+        rd = 4
+    end
+    return r+rd
+end
+
+X = grib.data      # for zfp vert x lat x lon
+rbits_zfp = rs_zfp.(rbits_ll)               # corresponds to the sigbits from above
+cfs_zfp = fill(0.0,length(rbits_zfp))       # compression factors
+# decerr_zfp = fill(0.0,length(rbits_zfp))  # decimal error
 
 O3plot = fill(0f0,length(rbits_zfp)-1,size(o3)...)
 
@@ -60,9 +69,9 @@ O3plot = fill(0f0,length(rbits_zfp)-1,size(o3)...)
 cfs_zfp[1] = sizeof(X)/sizeof(zfp_compress(X))*2/(900*451)*(348528)
 
 for (i,r) in enumerate(rbits_zfp[2:end])
-    Xc = zfp_compress(log.(X),tol=r)
+    Xc = zfp_compress(X,precision=r)
     cfs_zfp[i+1] = sizeof(X)/sizeof(Xc)*2/(900*451)*(348528)
-    O3plot[i,:,:] = exp.(zfp_decompress(Xc)[level,:,:]')
+    O3plot[i,:,:] = zfp_decompress(Xc)[level,:,:]'
     # local o3r = zfp_decompress(o3c)
     # decerr_zfp[i+1] = median(vec(abs.(log2.(abs.(X./o3r)))))
 end
@@ -71,8 +80,6 @@ lat_div(n::Integer) = Array(-90:180/(n-1):90)
 lon_div(n::Integer) = Array(0:360/n:360)
 
 ## PLOT
-# pygui(true)
-# ion()
 ioff()
 cmap = ColorMap(ColorSchemes.turku.colors)
 vmin,vmax = extrema(o3)
@@ -151,5 +158,5 @@ ax1.set_title(L"O$_3$ zfp compression")
 ax1.set_title("b",fontweight="bold",loc="right")
 
 tight_layout(rect=[0.02,0.08,1,1])
-savefig("/Users/milan/git/Elefridge.jl/maps/zfp_lossless_logo3_$level.png",dpi=200)
+savefig("/Users/milan/git/Elefridge.jl/maps/zfp_t_$level.png",dpi=200)
 close(fig)
