@@ -1,23 +1,19 @@
 """Count the occurences of the 1-bit in bit position b across all elements of A."""
-function bitcount(A::Array{T},b::Int) where {T<:Unsigned}
+function bitcount(A::Array{T},b::Int) where {T<:Union{Integer,AbstractFloat}}
     N = sizeof(T)*8             # number of bits in T
-    @boundscheck b <= N || throw(BoundsError("Count bit $b for $T is invalid."))
+    @boundscheck b <= N || throw(error("Can't count bit $b for $N-bit type $T."))
+    UIntT = whichUInt(T)
     n = 0                       # counter
     shift = N-b                 # shift desired bit b
-    mask = one(T) << shift
+    mask = one(UIntT) << shift      # leftshift always pushes 0s
     for a in A                      # mask everything but b and shift
-        n += (a & mask) >> shift    # to have either 0x00 or 0x01
+        n += (reinterpret(UIntT,a) & mask) >>> shift   # to have either 0x00 or 0x01
     end
     return n
 end
 
-"""Count the occurences of the 1-bit in bit position b across all elements of A.
-Method for Integers & Floats via reinterpretation to unsigned integers."""
-bitcount(A::Array{T},b::Int) where {T<:Union{Signed,AbstractFloat}} =
-    bitcount(reinterpret.(whichUInt(T),A),b)
-
 """Count the occurences of the 1-bit in every bit position b across all elements of A."""
-function bitcount(A::Array{T}) where {T<:Union{Unsigned,Signed,AbstractFloat}}
+function bitcount(A::Array{T}) where {T<:Union{Integer,AbstractFloat}}
     N = 8*sizeof(T)             # determine the size [bit] of elements in A
     n = fill(0,N)               # preallocate counters
     for b in 1:N                # loop over bit positions and count each
@@ -30,42 +26,39 @@ end
 distributed bits in A."""
 function bitcountentropy(A::AbstractArray)
     N = prod(size(A))
-    p = bitcount(A) / N
-    e = [abs(entropy([pi,1-pi],2)) for pi in p]
+    ps = bitcount(A) / N
+    e = [abs(entropy([p,1-p],2)) for p in ps]
     return e
 end
 
 """Count pairs of bits across elements of A for bit position b therein.
 Returns a 4-element array with counts for 00,01,10,11."""
-function bitpaircount(A::Array{T},b::Int) where {T<:Unsigned}
+function bitpaircount(A::Array{T},b::Int) where {T<:Union{Integer,AbstractFloat}}
     N = sizeof(T)*8             # number of bits in T
-    @boundscheck b <= N || throw(BoundsError("Count bit $b for $T is invalid."))
-    n = [0,0,0,0]               # counter for 00,01,10,11
-    shift = N-b-1               # shift to the 2nd last position either 0x00,0x10
-    shift2 = N-b                # shift to last position 0x0 or 0x1
-    mask = one(T) << shift2     # mask everything except b
+    @boundscheck b <= N || throw(error("Can't count bit $b for $N-bit type $T."))
+    UIntT = whichUInt(T)
+
+    n = [0,0,0,0]                   # counter for 00,01,10,11
+    shift = N-b-1                   # shift to the 2nd last position either 0x00,0x10
+    shift2 = N-b                    # shift to last position 0x0 or 0x1
+    mask = one(UIntT) << shift2     # mask everything except b
 
     # a1 is bit from previous entry in A, a2 is the current
     # a1 is shifted to sit in the 2nd last position
     # a2 sits in the last position
-    a1 = (A[1] & mask) >> shift
-    for a in A[2:end]
-        a2 = (a & mask) >> shift2
+    a1 = (reinterpret(UIntT,A[1]) & mask) >>> shift
+    @inbounds for i in 2:length(A)
+        a2 = (reinterpret(UIntT,A[i]) & mask) >>> shift2
         n[(a1 | a2)+1] += 1
         a1 = a2 << 1
     end
     return n
 end
 
-"""Count pairs of bits across elements of A for bit position b therein.
-Method which reinterprets Integers and Floats as UInts."""
-bitpaircount(A::Array{T},b::Int) where {T<:Union{Signed,AbstractFloat}} =
-    bitpaircount(reinterpret.(whichUInt(T),A),b)
-
 """Count pairs of bits across elements of A for every bit position therein.
 Returns a 4xn-array with counts for 00,01,10,11 in rows and every bit position
 in columns."""
-function bitpaircount(A::Array{T}) where {T<:Union{Unsigned,Signed,AbstractFloat}}
+function bitpaircount(A::Array{T}) where {T<:Union{Integer,AbstractFloat}}
     N = 8*sizeof(T)         # number of bits in T
     n = fill(0,4,N)         # store the 4 possible pair counts for every bit position
     for b in 1:N
@@ -101,9 +94,9 @@ function bitcpentropy(A::Array{T}) where {T<:Union{Unsigned,Signed,AbstractFloat
     return e
 end
 
-function bitinformation(A::Array{T}) where {T<:Union{Unsigned,Signed,AbstractFloat}}
-    N = prod(size(A[2:end]))        # elements in array
-    n1 = bitcount(A[1:end-1])       # occurences of bit = 1
+function bitinformation(A::AbstractArray)
+    N = prod(size(A))-1             # elements in array
+    n1 = bitcount(A)-bitcount([A[end]])     # occurences of bit = 1
     n0 = N.-n1                      # occurences of bit = 0
     q0 = n0/N                       # respective probabilities
     q1 = n1/N
