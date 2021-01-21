@@ -8,7 +8,7 @@ module Elefridge
     export bitstring, bitentropy, bitcount, bitpaircount,
         bitinformation, signed_exponent, signed_exponent!,
         bittranspose, bitbacktranspose, xor_delta,
-        unxor_delta
+        unxor_delta, CRPS, CRPS!
 
 
     using StatsBase
@@ -31,5 +31,6 @@ module Elefridge
     include("infcontent.jl")
     include("bittranspose.jl")
     include("xor_delta.jl")
+    include("crps.jl")
 
 end

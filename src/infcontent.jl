@@ -94,6 +94,7 @@ function bitcpentropy(A::Array{T}) where {T<:Union{Unsigned,Signed,AbstractFloat
     return e
 end
 
+"""Calculates the bitwise information content in the first dimensions of A."""
 function bitinformation(A::AbstractArray)
     N = prod(size(A))-1             # elements in array
     n1 = bitcount(A)-bitcount([A[end]])     # occurences of bit = 1
