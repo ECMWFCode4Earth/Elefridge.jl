@@ -1,54 +1,45 @@
-using PyCall
-using JLD2
-using FileIO
-using NetCDF
+using JLD2, FileIO, NetCDF
 using Elefridge
 
-steps = "1-90"
-# steps = "90-144"
-# steps = "150-360"
-path1 = "/data1/ens"
-path2 = "/data2/ens"
-all_files1 = [joinpath(path1,f) for f in filter(x->endswith(x,"steps$steps.ll.nc"),readdir(path1))]
-all_files2 = [joinpath(path2,f) for f in filter(x->endswith(x,"steps$steps.ll.nc"),readdir(path2))]
-
-all_files = vcat(all_files1,all_files2)
-
-# sort members
-all_files_n = sortperm([parse(Int,split(split(f,"member")[2],".steps")[1])
-                        for f in all_files])
-all_files = all_files[all_files_n]
-all_files
+path = "/network/aopp/chaos/pred/kloewer/esowc/"
+member1files = filter(x->endswith(x,".nc"),readdir(joinpath(path,"member1")))
+steps = [parse(Int,split(split(file,"step")[2],".")[1]) for file in member1files]
+sort!(steps)
 
 # parameter
-Nens = length(all_files)
-Ntsteps = [90,18,36][steps .== ["1-90","90-144","150-360"]][1]
+Nens = 25
 Nbits = 32
 Nlon = 1800
-Nlat = 451
-Nvert = 11
+Nlat = 901
+Nvert = 91
+Ntsteps = length(steps)
 
-# preallocate bitwise information content
-BI = try load("/home/milan/analysis/bitinformation_$(Nens)members_$steps.jld2","BI") catch; zeros(Float64,Ntsteps,Nbits) end
+# preallocate/load bitwise information content
+BI = zeros(Float64,Ntsteps,Nbits)
+try
+    BI[:,:] = load(joinpath(path,"analysis/bitinformation_$(Nens)members.jld2"),"BI")
+    println("Result array loaded from file.")
+catch
+    println("Result array preallocated.")
+end
 
 temp = fill(0f0,Nens,Nlon,Nlat,Nvert)
 
-for t in 58:Ntsteps
-    println("Time step $t")
-    temp[:] .= 0f0
+for t in 1:Ntsteps
+    println("Time step $(steps[t])h")
     
     # read the data
     print("Ensemble member ")
     for ie in 1:Nens
         print("$ie,")
-        ncfile = NetCDF.open(all_files[ie])
-        temp[ie,:,:,:] = ncfile.vars["t"][:,451:end,:,t]
+        ncfile = NetCDF.open(joinpath(path,"member$ie","ensemble.t.member$ie.step$(steps[t]).ll.nc"))
+        temp[ie,:,:,:] = ncfile.vars["t"][1:Nlon,1:Nlat,:]
     end
     println("All loaded.")
     
     # calculate bitwise information
     BI[t,:] = bitinformation(temp)
     println("Information calculated.")
-    save("/home/milan/analysis/bitinformation_$(Nens)members_$steps.jld2","BI",BI)
+    save(joinpath(path,"analysis/bitinformation_$(Nens)members.jld2"),"BI",BI)
     println("---")
 end
