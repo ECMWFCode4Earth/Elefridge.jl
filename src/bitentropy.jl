@@ -1,29 +1,39 @@
+"""Calculate the bitpattern entropy in base `base` for all elements in array A."""
 function bitentropy(A::AbstractArray,base::Real=2)
     nbits = sizeof(eltype(A))*8
     T = whichUInt(nbits)
-    nbits == 8 && return bitentropy(T,A,base)
-    nbits == 16 && return bitentropy(T,A,base)
-    nbits == 24 && return bitentropy(T,A,base)
-    nbits == 32 && return bitentropy(T,A,base)
-    nbits == 40 && return bitentropy(T,A,base)
-    nbits == 48 && return bitentropy(T,A,base)
-    nbits == 56 && return bitentropy(T,A,base)
-    nbits == 64 && return bitentropy(T,A,base)
-    throw(error("Only element types with 8,16,24,32,40,48,56,64 bits supported.
-                $nbits-bit $(eltype(A)) provided."))
+    return bitentropy(T,A,base)
 end
 
-function bitentropy(::Type{T},A::AbstractArray,base::Real=2) where T
+"""Calculate the bitpattern entropy in base `base` for all elements in array A.
+In place version that will sort the array."""
+function bitentropy!(A::AbstractArray,base::Real=2)
+    nbits = sizeof(eltype(A))*8
+    T = whichUInt(nbits)
+    return bitentropy!(T,A,base)
+end
+
+"""Calculate the bitpattern entropy for an array A by reinterpreting the elements
+as UInts and sorting them to avoid creating a histogram."""
+function bitentropy(::Type{T},A::AbstractArray,base::Real) where {T<:Unsigned}
+    return bitentropy!(T,copy(A),base)
+end
+
+"""Calculate the bitpattern entropy for an array A by reinterpreting the elements
+as UInts and sorting them to avoid creating a histogram.
+In-place version of bitentropy."""
+function bitentropy!(::Type{T},A::AbstractArray,base::Real) where {T<:Unsigned}
 
     # reinterpret to UInt then sort to avoid allocating a histogram
-    Av = sort(reinterpret.(T,vec(A)))
-    n = length(Av)
+    # in-place ver
+    sort!(reinterpret(T,vec(A)))    # TODO maybe think of an inplace version?
+    n = length(A)
 
     E = 0.0     # entropy
     m = 1       # counter
 
     for i in 1:n-1
-        @inbounds if Av[i] == Av[i+1]     # check whether next entry belongs to the same bin in histogram
+        @inbounds if A[i] == A[i+1]     # check whether next entry belongs to the same bin in histogram
             m += 1
         else
             p = m/n
