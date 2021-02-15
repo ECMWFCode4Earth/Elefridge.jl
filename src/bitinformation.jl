@@ -1,19 +1,19 @@
 """Count the occurences of the 1-bit in bit position b across all elements of A."""
-function bitcount(A::Array{T},b::Int) where {T<:Union{Integer,AbstractFloat}}
+function bitcount(A::AbstractArray{T},b::Int) where {T<:Union{Integer,AbstractFloat}}
     N = sizeof(T)*8             # number of bits in T
     @boundscheck b <= N || throw(error("Can't count bit $b for $N-bit type $T."))
     UIntT = whichUInt(T)
     n = 0                       # counter
     shift = N-b                 # shift desired bit b
-    mask = one(UIntT) << shift      # leftshift always pushes 0s
-    for a in A                      # mask everything but b and shift
+    mask = one(UIntT) << shift  # leftshift always pushes 0s
+    for a in A                  # mask everything but b and shift
         n += (reinterpret(UIntT,a) & mask) >>> shift   # to have either 0x00 or 0x01
     end
     return n
 end
 
 """Count the occurences of the 1-bit in every bit position b across all elements of A."""
-function bitcount(A::Array{T}) where {T<:Union{Integer,AbstractFloat}}
+function bitcount(A::AbstractArray{T}) where {T<:Union{Integer,AbstractFloat}}
     N = 8*sizeof(T)             # determine the size [bit] of elements in A
     n = fill(0,N)               # preallocate counters
     for b in 1:N                # loop over bit positions and count each
@@ -33,7 +33,7 @@ end
 
 """Count pairs of bits across elements of A for bit position b therein.
 Returns a 4-element array with counts for 00,01,10,11."""
-function bitpaircount(A::Array{T},b::Int) where {T<:Union{Integer,AbstractFloat}}
+function bitpaircount(A::AbstractArray{T},b::Int) where {T<:Union{Integer,AbstractFloat}}
     N = sizeof(T)*8             # number of bits in T
     @boundscheck b <= N || throw(error("Can't count bit $b for $N-bit type $T."))
     UIntT = whichUInt(T)
@@ -58,7 +58,7 @@ end
 """Count pairs of bits across elements of A for every bit position therein.
 Returns a 4xn-array with counts for 00,01,10,11 in rows and every bit position
 in columns."""
-function bitpaircount(A::Array{T}) where {T<:Union{Integer,AbstractFloat}}
+function bitpaircount(A::AbstractArray{T}) where {T<:Union{Integer,AbstractFloat}}
     N = 8*sizeof(T)         # number of bits in T
     n = fill(0,4,N)         # store the 4 possible pair counts for every bit position
     for b in 1:N
@@ -94,15 +94,52 @@ function bitcpentropy(A::Array{T}) where {T<:Union{Unsigned,Signed,AbstractFloat
     return e
 end
 
-"""Calculates the bitwise information content in the first dimensions of A."""
-function bitinformation(A::AbstractArray)
-    N = prod(size(A))-1             # elements in array
+function bitinformation(A::AbstractArray,dims::Symbol)
+    if dims == :all_dimensions
+        N = prod(size(A))-1                     # elements in array
+        n1 = bitcount(A)-bitcount([A[end]])     # occurences of bit = 1
+        bi = fill(0.0,length(n1))
+        permu = collect(1:ndims(A))                 # permutation
+        perm0 = vcat(permu[2:end],permu[1])         # used to permute permu
+        for idim in 1:ndims(A)
+            Aperm = PermutedDimsArray(A,permu)
+            permute!(permu,perm0)
+            npair = bitpaircount(Aperm)
+            bi .+= bitinformation(n1,npair,N)
+        end
+        # arithmetic mean of information across the dimensions
+        return bi ./ ndims(A)
+    else
+        return bitinformation(A)
+    end
+end
+
+function bitinformation(A::AbstractArray;dims::Int=1)
+    N = prod(size(A))-1                         # elements in array
     n1 = bitcount(A)-bitcount([A[end]])     # occurences of bit = 1
+
+    if dims > 1
+        permu = collect(1:ndims(A))                 # permutation
+        perm0 = vcat(permu[2:end],permu[1])         # used to permute permu
+        for _ in 1:dims-1
+            permute!(permu,perm0)
+        end
+        A = PermutedDimsArray(A,permu)
+    end
+
+    npair = bitpaircount(A)
+    return bitinformation(n1,npair,N)
+end
+
+function bitinformation(n1::Array{Int,1},npair::Array{Int,2},N::Int)
+    nbits = length(n1)
+    @assert size(npair) == (4,nbits)    "npair array must be of size 4xnbits"
+    @assert maximum(n1) <= N            "N cannot be smaller than maximum(n1)"
+
     n0 = N.-n1                      # occurences of bit = 0
     q0 = n0/N                       # respective probabilities
     q1 = n1/N
 
-    npair = bitpaircount(A)
     pcond = similar(npair,Float64)      # preallocate conditional probability
 
     pcond[1,:] = npair[1,:] ./ n0       # p(0|0) = n(00)/n(0)
@@ -120,8 +157,8 @@ function bitinformation(A::AbstractArray)
     H0 = [entropy([p00,p01],2) for (p00,p01) in zip(pcond[1,:],pcond[2,:])]
     H1 = [entropy([p10,p11],2) for (p10,p11) in zip(pcond[3,:],pcond[4,:])]
 
-    # Information content
-    I = @. H - q0*H0 - q1*H1
+    # Information content, take abs as rounding errors can yield negative I
+    I = @. abs(H - q0*H0 - q1*H1)
 
     return I
 end

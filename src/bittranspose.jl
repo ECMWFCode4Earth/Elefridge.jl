@@ -1,5 +1,8 @@
 const DEFAULT_BLOCKSIZE=2^14
 
+"""Transpose the bits (aka bit shuffle) of an array to place sign bits, etc. next to each
+other in memory. Back transpose via bitbacktranspose(). Inplace version that requires a
+preallocated output array At, which must contain 0s everywhere."""
 function bittranspose!( ::Type{UIntT},				# UInt equiv to T
 						At::AbstractArray{T},		# transposed array
 						A::AbstractArray{T};		# original array
@@ -51,6 +54,8 @@ function bittranspose!( ::Type{UIntT},				# UInt equiv to T
     return At
 end
 
+"""Transpose the bits (aka bit shuffle) of an array to place sign bits, etc. next to each
+other in memory. Back transpose via bitbacktranspose()."""
 function bittranspose(A::AbstractArray{T};kwargs...) where T
 	UIntT = whichUInt(T)
 	At = fill(reinterpret(T,zero(UIntT)),size(A))
@@ -58,6 +63,7 @@ function bittranspose(A::AbstractArray{T};kwargs...) where T
 	return At
 end
 
+"""Backtranspose of bittranspose()."""
 function bitbacktranspose!(	::Type{UIntT},				# UInt equiv to T
 							A::AbstractArray{T},		# backtransposed output
 							At::AbstractArray{T};		# transposed input
@@ -108,30 +114,10 @@ function bitbacktranspose!(	::Type{UIntT},				# UInt equiv to T
     return A
 end
 
+"""Backtranspose the bits of array A that were previously transposed with bittranspse()."""
 function bitbacktranspose(At::AbstractArray{T};kwargs...) where T
 	UIntT = whichUInt(T)
 	A = fill(reinterpret(T,zero(UIntT)),size(At))
 	bitbacktranspose!(UIntT,A,At;kwargs...)
 	return A
 end
-
-# function Base.BitMatrix(A::Array{T,1}) where T
-# 	isbitstype(eltype(A)) || error("Only bitstype for elements of A allowed.
-# 									$(eltype(A)) provided")
-# 	height = 8 * sizeof(eltype(A))
-# 	dims = (height, length(A))
-# 	data_elems = cld(sizeof(A), 8)
-# 	bitarr = Base.BitMatrix(undef, dims)
-# 	bitarr.chunks = unsafe_wrap(Array, Ptr{UInt}(pointer(A)), (data_elems,))
-# 	return bitarr
-# end
-#
-# function foo(x::Array)
-# 	isbitstype(eltype(x)) || error("Bad!")
-# 	height = 8 * sizeof(eltype(x))
-# 	dims = (height, length(x))
-# 	data_elems = cld(sizeof(x), 8)
-# 	bitarr = Base.BitMatrix(undef, dims)
-# 	bitarr.chunks = unsafe_wrap(Array, Ptr{UInt}(pointer(x)), (data_elems,))
-# 	return bitarr
-# end

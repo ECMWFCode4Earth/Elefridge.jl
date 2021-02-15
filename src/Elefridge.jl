@@ -5,10 +5,10 @@ module Elefridge
         LogQuant8Array, LogQuant16Array, LogQuant24Array,
         shave, set_one, groom, halfshave, minpos, round!
 
-    export bitstring, bitentropy, bitcount, bitpaircount,
-        bitinformation, signed_exponent, signed_exponent!,
-        bittranspose, bitbacktranspose, xor_delta,
-        unxor_delta, CRPS, CRPS!
+    export bitstring, bitentropy, bitentropy!, bitcount, bitpaircount,
+        bitcountentropy, bitinformation, signed_exponent, signed_exponent!,
+        bittranspose, bitbacktranspose, xor_delta, xor_delta!,
+        unxor_delta, unxor_delta!, CRPS, CRPS!
 
 
     using StatsBase
@@ -28,9 +28,8 @@ module Elefridge
     include("bitgrooming.jl")
     include("bitrounding.jl")
     include("bitstring.jl")
-    include("infcontent.jl")
+    include("bitinformation.jl")
     include("bittranspose.jl")
     include("xor_delta.jl")
     include("crps.jl")
-
 end
