@@ -12,15 +12,16 @@ function CRPS!(x::Array{T,1},o::T) where T
     s = m==1 ? x[1]-o : 0.0                 
 
     # integrate over the heaviside=0 part
-    for i in 1:(m == nothing ? n-1 : m)
+    for i in 1:(m == nothing ? n-1 : m-1)
         s += (i*dp)^2*(x[i+1]-x[i])
     end
 
-    # integrate over the heaviside=0 part
-    for i in (m == nothing ? n : m+1):n-1
+    # integrate over the heaviside=1 part
+    for i in (m == nothing ? n : m):n-1
         s += (i*dp-1)^2*(x[i+1]-x[i])
     end
 
+    # integration from x to o if o is outside of the range of x
     s += (m == nothing) ? o-x[end] : 0.0
 
     return s
