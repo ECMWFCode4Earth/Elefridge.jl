@@ -8,6 +8,11 @@ Atmospheric, Oceanic and Planetary Physics, University of Oxford\
 
 This repository summarises the results on [ECMWF](https://www.ecmwf.int)'s [summer of weather code](https://esowc.ecmwf.int) [challege #14: Size, precision, speed - pick two](https://github.com/esowc/challenges_2020/issues/4). For comments and changes, please raise an [issue](https://github.com/esowc/Elefridge.jl/issues) or create a pull request. The original prosal is [here](https://github.com/esowc/Elefridge.jl/blob/master/proposal.md).
 
+As part of this project, the following Julia packages have been developed
+- [BitInformation.jl](https://github.com/milankl/BitInformation.jl)
+- [LinLogQuantization.jl](https://github.com/milankl/LinLogQuantization.jl)
+- [ZfpCompression.jl](https://github.com/milankl/ZfpCompression.jl)
+
 ## Abstract
 
 Enormous amounts of data are produced at weather and climate forecast centres
