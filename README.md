@@ -1,11 +1,10 @@
-[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
-
 # Elefridge.jl - Compressing atmospheric data into its real information
 
-This repository contains analysis and plotting scripts for an upcoming publication, which is submitted as 
+This repository contains analysis and plotting scripts for
 
 M Klöwer, M Razinger, JJ Dominguez, PD Düben, TN Palmer, 2021. *Compressing atmospheric data into its real information content.*,
-in review for **Nature Computational Science**. Preprint [10.21203/rs.3.rs-590601/v1](https://www.researchsquare.com/article/rs-590601/v1)
+**Nature Computational Science**, accepted.
+Preprint [10.21203/rs.3.rs-590601/v1](https://www.researchsquare.com/article/rs-590601/v1)
 
 Analysis notebooks can be found in [/nb](https://github.com/esowc/Elefridge.jl/blob/master/nb/bitinformation.ipynb). This repository
 also summarises the results on [ECMWF](https://www.ecmwf.int)'s [summer of weather code](https://esowc.ecmwf.int)
