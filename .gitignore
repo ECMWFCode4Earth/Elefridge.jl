@@ -2,3 +2,6 @@
 *.jld
 *.nc
 nb/.ipynb_checkpoints
+nb/ukcoastline
+nb/radardata
+*.csv
